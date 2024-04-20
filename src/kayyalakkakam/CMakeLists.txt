@@ -9,6 +9,10 @@ project(kayyalakkakam)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  actionlib
+  move_base_msgs
+  geometry_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -105,6 +109,7 @@ catkin_package(
 #  LIBRARIES kayyalakkakam
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
+  CATKIN_DEPENDS roscpp actionlib move_base_msgs geometry_msgs tf
 )
 
 ###########
@@ -204,3 +209,4 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(sendGoal_node src/code/send_goal.cpp)
+target_link_libraries(sendGoal_node ${catkin_LIBRARIES})
