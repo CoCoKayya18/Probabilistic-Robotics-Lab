@@ -4,17 +4,24 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <tf/tf.h>
 #include <signal.h>
+#include <math.h>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
-void sendGoal(double x_goal, double y_goal, double yaw_goal)
+struct Goal {
+    double x;
+    double y;
+    double yaw;
+};
+
+void sendGoal(Goal currentGoal)
 {
     //tell the action client that we want to spin a thread by default
     MoveBaseClient ac("move_base", true);
 
     // Convert given Yaw-Goal to Quaternions
     tf::Quaternion goalQuatz;
-    goalQuatz.setRPY(0, 0, yaw_goal);
+    goalQuatz.setRPY(0, 0, currentGoal.yaw);
     goalQuatz = goalQuatz.normalize();
 
     //wait for the action server to come up
@@ -27,8 +34,8 @@ void sendGoal(double x_goal, double y_goal, double yaw_goal)
     move_base_msgs::MoveBaseGoal goal;
     goal.target_pose.header.frame_id = "map";
     goal.target_pose.header.stamp = ros::Time::now();
-    goal.target_pose.pose.position.x = x_goal;
-    goal.target_pose.pose.position.y = y_goal;
+    goal.target_pose.pose.position.x = currentGoal.x;
+    goal.target_pose.pose.position.y = currentGoal.y;
     goal.target_pose.pose.orientation.w = goalQuatz.getW();
     goal.target_pose.pose.orientation.x = goalQuatz.getX();
     goal.target_pose.pose.orientation.y = goalQuatz.getY();
@@ -49,15 +56,11 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "simple_navigation_goals");
 
-    // Define 4 goals
-    std::tuple<double, double, double> Goal1 = {0, 3, 3.1415};
-    std::tuple<double, double, double> Goal2 = {0, 3, 3.1415};
-    std::tuple<double, double, double> Goal3 = {0, 3, 3.1415};
-    std::tuple<double, double, double> Goal4 = {0, 3, 3.1415};
+    std::vector<Goal> goals = {{-1.5, 1.5, M_PI/2}, {-1.5, -1.5, -M_PI}, {1.5, -1.5, -M_PI/2}, {1.5, 1.5, 0}};
     
-    for (int i=0; i++; i<4){
-        sendGoal(i,0,1);
-    } 
+    for(const auto& goal : goals) {
+        sendGoal(goal);
+    };
 }
 
 // Base-Code from https://wiki.ros.org/navigation/Tutorials/SendingSimpleGoals  
