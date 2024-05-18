@@ -2,12 +2,6 @@
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
-struct GoalSender::Goal {
-    double x;
-    double y;
-    double yaw;
-};
-
 void GoalSender::sendGoal()
 {
     for(const auto& currentGoal : this->listOfGoals) {
@@ -47,5 +41,19 @@ void GoalSender::sendGoal()
     };
 };
 
+int main(int argc, char** argv){
+
+    ros::init(argc, argv, "Send_Goal Node");                                                               
+    ROS_INFO_STREAM("Send_Goal Node started");
+
+    std::vector<GoalSender::Goal> goals = {{-1.5, 1.5, M_PI/2}, {-1.5, -1.5, -M_PI}, {1.5, -1.5, -M_PI/2}, {1.5, 1.5, 0}};
+    GoalSender theGoaler(goals);
+    theGoaler.sendGoal();
+                                                                          
+    ROS_INFO_STREAM("Send_Goal Node ended");                                                                        
+    // ros::Timer timer = nh.createTimer(ros::Duration(robot.pub_rate), &MyClass::timer_callback, &robot);
+    ros::spin();                                                                                        
+    return 0;
+};
 
 // Base-Code from https://wiki.ros.org/navigation/Tutorials/SendingSimpleGoals  

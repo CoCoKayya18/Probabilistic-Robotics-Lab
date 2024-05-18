@@ -37,7 +37,7 @@
 
   <!-- AMCL -->
   <!-- Arguments -->
-  <arg name="scan_topic"     default="scan"/>
+  <!-- <arg name="scan_topic"     default="scan"/>
   <arg name="initial_pose_x" default="0.0"/>
   <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="0.0"/>
@@ -76,15 +76,15 @@
     <param name="odom_alpha4"               value="0.1"/>
     <param name="odom_frame_id"             value="odom"/>
     <param name="base_frame_id"             value="base_footprint"/>
-  </node> 
+  </node>  -->
 
-  <!-- Gmapping
+  <!-- Gmapping -->
   <node pkg="gmapping" type="slam_gmapping" name="turtlebot3_slam_gmapping"> 
     <param name="base_frame" value="$(arg set_base_frame)"/>
     <param name="odom_frame" value="$(arg set_odom_frame)"/>
     <param name="map_frame"  value="$(arg set_map_frame)"/>
     <rosparam command="load" file="$(find turtlebot3_slam)/config/gmapping_params.yaml" />
-  </node>  -->
+  </node> 
  
 
   <!-- Move-Base -->
@@ -105,6 +105,8 @@
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find turtlebot3_gazebo)/rviz/turtlebot3_gazebo_model.rviz"/>
 
   <node name="send_goal" pkg="kayyalakkakam" type="sendGoal_node"> </node>
-  <node name="main_node" pkg="kayyalakkakam" type="main_node"> </node>
+  <node name="subscriber_node" pkg="kayyalakkakam" type="subscriber_node"> </node>
+  <node name="main_node" pkg="kayyalakkakam" type="main_node" output="screen"> </node>
+
 
 </launch>

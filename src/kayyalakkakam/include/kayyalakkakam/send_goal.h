@@ -9,7 +9,15 @@
 class GoalSender
 {
     public:
-        struct Goal;
+        
+        struct Goal {
+            double x;
+            double y;
+            double yaw;
+
+            Goal(double x, double y, double yaw) : x(x), y(y), yaw(yaw) {};
+        };
+
         GoalSender(std::vector<Goal> goals):listOfGoals(goals){};
         ~GoalSender(){};
         void sendGoal();

@@ -2,14 +2,20 @@
 
 MyClass::MyClass(ros::NodeHandle &N):NH(N){
     ROS_INFO_STREAM("Init My ROS Package");
-    pub = NH.advertise< std_msgs::String >("pub_topic", 1 );
+    pub = NH.advertise< std_msgs::String >("egal", 1 );
     check_params(NH);
 }
 
 MyClass::~MyClass( void ){}
 
-void MyClass::my_callback( const std_msgs::String::ConstPtr& msg ) {
-    ROS_INFO_STREAM( "Got Callback Message" );
+void MyClass::odom_callback( const nav_msgs::Odometry::ConstPtr& msg ) {
+    ROS_INFO_STREAM( "Got Odom Message" );
+    ROS_INFO_STREAM(msg);
+ }
+
+ void MyClass::laserscan_callback( const sensor_msgs::LaserScan::ConstPtr& msg ) {
+    ROS_INFO_STREAM( "Got LaserScan Message" );
+    ROS_INFO_STREAM(msg);
  }
 
 void MyClass::timer_callback(const ros::TimerEvent& event){
@@ -26,3 +32,17 @@ void MyClass::check_params(ros::NodeHandle &N){
     } 
     std::cout << "Publishing rate:" << pub_rate << std::endl;
  }
+
+
+int main(int argc, char** argv){
+
+    ros::init(argc, argv, "my_ros_node");                                                               
+    ROS_INFO_STREAM("Subscriber Node started");
+    ros::NodeHandle nh("~");
+                                                                         
+    MyClass robot(nh);    
+    ROS_INFO_STREAM("Subscriber Node ended");                                                                        
+    // ros::Timer timer = nh.createTimer(ros::Duration(robot.pub_rate), &MyClass::timer_callback, &robot);
+    ros::spin();                                                                                        
+    return 0;
+};
