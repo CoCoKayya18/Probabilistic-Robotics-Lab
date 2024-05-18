@@ -51,7 +51,7 @@ int main(int argc, char** argv){
     theGoaler.sendGoal();
                                                                           
     ROS_INFO_STREAM("Send_Goal Node ended");                                                                        
-    // ros::Timer timer = nh.createTimer(ros::Duration(robot.pub_rate), &MyClass::timer_callback, &robot);
+    // ros::Timer timer = nh.createTimer(ros::Duration(robot.pub_rate), &Ros_Subscriber_Publisher_Class::timer_callback, &robot);
     ros::spin();                                                                                        
     return 0;
 };
