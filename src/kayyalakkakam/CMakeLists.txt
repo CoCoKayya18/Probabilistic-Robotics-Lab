@@ -208,6 +208,7 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(EKF_node src/code/EKF_Slam.cpp)
-add_executable(sendGoal_node src/code/send_goal.cpp)
-target_link_libraries(sendGoal_node ${catkin_LIBRARIES})
+add_executable(EKF_node include/${PROJECT_NAME}/EKF_Slam.cpp)
+add_executable(sendGoal_node include/${PROJECT_NAME}/send_goal.cpp)
+add_executable(robot_class include/${PROJECT_NAME}/robot_class.cpp)
+add_executable(main_node src/code/main.cpp)
