@@ -7,8 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /DepthCloud1/Auto Size1
-        - /Marker1
-        - /Path1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 588
   - Class: rviz/Selection
@@ -141,30 +139,12 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        base_footprint:
-          Value: true
-        base_link:
-          Value: true
-        base_scan:
-          Value: true
-        caster_back_link:
-          Value: true
-        imu_link:
-          Value: true
-        map:
-          Value: true
-        odom:
-          Value: true
-        wheel_left_link:
-          Value: true
-        wheel_right_link:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -172,22 +152,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        map:
-          odom:
-            base_footprint:
-              base_link:
-                base_scan:
-                  {}
-                caster_back_link:
-                  {}
-                imu_link:
-                  {}
-                wheel_left_link:
-                  {}
-                wheel_right_link:
-                  {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Class: rviz/Camera
       Enabled: false
       Image Rendering: background and overlay
@@ -199,13 +166,15 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
+        "": true
         Axes: true
         DepthCloud: true
+        EKF_Path: true
         Grid: true
         LaserScan: true
         Marker: true
         Odometry: true
-        Path: true
+        Odometry_Path: true
         RobotModel: true
         TF: true
         Value: true
@@ -299,7 +268,7 @@ Visualization Manager:
       Length: 0.30000001192092896
       Line Style: Lines
       Line Width: 0.029999999329447746
-      Name: Path
+      Name: EKF_Path
       Offset:
         X: 0
         Y: 0
@@ -312,6 +281,38 @@ Visualization Manager:
       Shaft Length: 0.10000000149011612
       Topic: /main_node/EKF_path
       Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 255; 255
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Odometry_Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /main_node/Odometry_path
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /featureExtractor/visualization_feature_marker
+      Name: Features
+      Namespaces:
+        features: true
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
@@ -350,7 +351,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 8.785420417785645
+      Scale: 53.24293518066406
       Target Frame: <Fixed Frame>
       X: 0.593521773815155
       Y: -0.040479183197021484

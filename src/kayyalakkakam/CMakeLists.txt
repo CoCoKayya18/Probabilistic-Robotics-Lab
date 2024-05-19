@@ -15,6 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   sensor_msgs
   tf
+  pcl_conversions
+  pcl_ros
+  laser_geometry
 )
 
 ## System dependencies are found with CMake's conventions
@@ -111,7 +114,7 @@ catkin_package(
 #  LIBRARIES kayyalakkakam
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
-  CATKIN_DEPENDS roscpp actionlib move_base_msgs geometry_msgs tf
+  CATKIN_DEPENDS roscpp actionlib move_base_msgs geometry_msgs tf pcl_conversions pcl_ros laser_geometry
 )
 
 ###########
@@ -211,13 +214,15 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-# add_executable(EKF_node include/${PROJECT_NAME}/EKF_Slam.cpp include/${PROJECT_NAME}/robot_class.cpp)
+# add_executable(EKF_node include/${PROJECT_NAME}/EKF_Localization.cpp include/${PROJECT_NAME}/robot_class.cpp)
 add_executable(sendGoal_node include/${PROJECT_NAME}/send_goal.cpp)
+add_executable(featureExtractor_node include/${PROJECT_NAME}/Feature_Extractor.cpp)
 # add_executable(subscriber_node include/${PROJECT_NAME}/robot_class.cpp)
-add_executable(main_node src/code/main.cpp include/${PROJECT_NAME}/EKF_Slam.cpp include/${PROJECT_NAME}/robot_class.cpp)
+add_executable(main_node src/code/main.cpp include/${PROJECT_NAME}/EKF_Localization.cpp include/${PROJECT_NAME}/robot_class.cpp)
 
 # Specify libraries to link a library or executable target against
 # target_link_libraries(EKF_node ${catkin_LIBRARIES})
 target_link_libraries(sendGoal_node ${catkin_LIBRARIES})
+target_link_libraries(featureExtractor_node ${catkin_LIBRARIES})
 # target_link_libraries(subscriber_node ${catkin_LIBRARIES})
 target_link_libraries(main_node ${catkin_LIBRARIES})

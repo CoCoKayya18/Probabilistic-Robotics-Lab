@@ -1,12 +1,12 @@
 #include "ros/ros.h"
-#include "EKF_Slam.h"
+#include "EKF_Localization.h"
 
 int main(int argc, char** argv){
 
     ros::init(argc, argv, "my_ros_node");                                                               
     ROS_INFO_STREAM("Main Node started");
     ros::NodeHandle nh("~");
-    EKF_Slam slamer(nh);
+    EKF_Localization slamer(nh);
 
     ros::Rate loop_rate(10);
 

@@ -102,12 +102,18 @@
     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)"/>
   </node>
 
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find kayyalakkakam)/src/rviz/turtlebot3world.rviz"/>
+  <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find kayyalakkakam)/src/rviz/turtlebot3world.rviz"/> -->
 
   <node name="send_goal" pkg="kayyalakkakam" type="sendGoal_node"> </node>
+  <node name="featureExtractor" pkg="kayyalakkakam" type="featureExtractor_node" output="screen"> </node>
   <!-- <node name="subscriber_node" pkg="kayyalakkakam" type="subscriber_node"> </node> -->
   <!-- <node name="EKF_node" pkg="kayyalakkakam" type="EKF_node" output="screen"> </node> -->
-  <node name="main_node" pkg="kayyalakkakam" type="main_node" output="screen"> </node>
+  <node name="main_node" pkg="kayyalakkakam" type="main_node"> </node>
+
+  <!-- View frames to generate TF tree PDF
+  <node name="view_frames" pkg="tf" type="view_frames" args=""/>
+
+  <node name="rqt_tf_tree" pkg="rqt_tf_tree" type="rqt_tf_tree"/> -->
 
 
 </launch>

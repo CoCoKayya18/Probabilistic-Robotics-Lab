@@ -5,11 +5,11 @@
 #include <tf/transform_broadcaster.h>
 #include "robot_class.h"
 
-class EKF_Slam
+class EKF_Localization
 {
     public:
-        EKF_Slam(ros::NodeHandle &N);
-        ~EKF_Slam(){};
+        EKF_Localization(ros::NodeHandle &N);
+        ~EKF_Localization(){};
 
 
         Eigen::VectorXd g_function(Eigen::VectorXd input_mu, nav_msgs::Odometry odometry);
@@ -22,10 +22,12 @@ class EKF_Slam
         void printMuAndSigma();
 
         /// Visualization Functions ///
-        void initializePublishers(ros::NodeHandle& nh);
-        void publishPath();
+        void initializeEKFPublishers(ros::NodeHandle& nh);
+        void publishEKFPath();
         void initializeMarkerPublisher(ros::NodeHandle& nh);
         void publishCovariance();
+        void initializeOdometryPublishers(ros::NodeHandle& nh);
+        void publishOdometryPath();
         /// Visualization Functions ///
 
     private:
@@ -39,6 +41,7 @@ class EKF_Slam
         Eigen::MatrixXd R; // Process Noise
         Eigen::MatrixXd Q; // Measurement Noise
 
-        ros::Publisher path_pub;    // Path publisher 
+        ros::Publisher EKF_path_pub;    // EKF Path publisher 
+        ros::Publisher Odometry_path_pub;    // EKF Path publisher 
         ros::Publisher marker_pub;  // Covariance Publisher
 };
