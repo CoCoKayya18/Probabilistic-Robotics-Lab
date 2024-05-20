@@ -37,10 +37,10 @@
 
   <!-- AMCL -->
   <!-- Arguments -->
-  <!-- <arg name="scan_topic"     default="scan"/>
-  <arg name="initial_pose_x" default="0.0"/>
-  <arg name="initial_pose_y" default="0.0"/>
-  <arg name="initial_pose_a" default="0.0"/>
+  <arg name="scan_topic"     default="scan"/>
+  <arg name="initial_pose_x" default="$(arg x_pos)"/>
+  <arg name="initial_pose_y" default="$(arg y_pos)"/>
+  <arg name="initial_pose_a" default="$(arg yaw_pos)"/>
 
   <node pkg="amcl" type="amcl" name="amcl">
     <param name="min_particles"             value="500"/>
@@ -76,15 +76,15 @@
     <param name="odom_alpha4"               value="0.1"/>
     <param name="odom_frame_id"             value="odom"/>
     <param name="base_frame_id"             value="base_footprint"/>
-  </node>  -->
+  </node> 
 
   <!-- Gmapping -->
-  <node pkg="gmapping" type="slam_gmapping" name="turtlebot3_slam_gmapping"> 
+  <!-- <node pkg="gmapping" type="slam_gmapping" name="turtlebot3_slam_gmapping"> 
     <param name="base_frame" value="$(arg set_base_frame)"/>
     <param name="odom_frame" value="$(arg set_odom_frame)"/>
     <param name="map_frame"  value="$(arg set_map_frame)"/>
     <rosparam command="load" file="$(find turtlebot3_slam)/config/gmapping_params.yaml" />
-  </node> 
+  </node>  -->
  
 
   <!-- Move-Base -->
@@ -102,13 +102,12 @@
     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)"/>
   </node>
 
-  <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find kayyalakkakam)/src/rviz/turtlebot3world.rviz"/> -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find kayyalakkakam)/src/rviz/turtlebot3world.rviz"/>
 
   <node name="send_goal" pkg="kayyalakkakam" type="sendGoal_node"> </node>
-  <node name="featureExtractor" pkg="kayyalakkakam" type="featureExtractor_node" output="screen"> </node>
-  <!-- <node name="subscriber_node" pkg="kayyalakkakam" type="subscriber_node"> </node> -->
-  <!-- <node name="EKF_node" pkg="kayyalakkakam" type="EKF_node" output="screen"> </node> -->
+  <!-- <node name="featureExtractor" pkg="kayyalakkakam" type="featureExtractor_node" output="screen"> </node> -->
   <node name="main_node" pkg="kayyalakkakam" type="main_node"> </node>
+  <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(find kayyalakkakam)/src/map/turtlebot3_world_map.yaml" />
 
   <!-- View frames to generate TF tree PDF
   <node name="view_frames" pkg="tf" type="view_frames" args=""/>

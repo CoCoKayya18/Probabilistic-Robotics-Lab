@@ -176,7 +176,7 @@ void EKF_Localization::prediction_step()
 void EKF_Localization::correction_step()
 {   
     // ROS_INFO_STREAM("CORRECTION RUNNING");
-    this->odomMessage = this->robot.getOdom();
+    this->laserscanMessage = this->robot.getLaserscan();
 
 };
 

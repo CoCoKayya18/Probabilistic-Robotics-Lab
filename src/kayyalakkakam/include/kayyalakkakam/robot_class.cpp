@@ -20,6 +20,10 @@ void Ros_Subscriber_Publisher_Class::odom_callback( const nav_msgs::Odometry::Co
     // ROS_INFO_STREAM(this->myLaserscanMsg);
  }
 
+ void Ros_Subscriber_Publisher_Class::map_callback ( const  nav_msgs::OccupancyGrid::ConstPtr& msg){
+    this->myMapMsg = *msg;
+ }
+
 void Ros_Subscriber_Publisher_Class::timer_callback(const ros::TimerEvent& event){
     ROS_INFO_STREAM( "Timer Callback" );
     my_message.data = "mymessage";
@@ -43,4 +47,9 @@ nav_msgs::Odometry Ros_Subscriber_Publisher_Class::getOdom()
 sensor_msgs::LaserScan Ros_Subscriber_Publisher_Class::getLaserscan()
 {
     return this->myLaserscanMsg;
+}
+
+nav_msgs::OccupancyGrid Ros_Subscriber_Publisher_Class::getMap()
+{
+    return this->myMapMsg;
 }

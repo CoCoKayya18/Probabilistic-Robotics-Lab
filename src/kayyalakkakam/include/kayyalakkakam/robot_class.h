@@ -5,6 +5,7 @@
 #include "std_msgs/String.h"
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include "eigen3/Eigen/Dense"
 
 class Ros_Subscriber_Publisher_Class{
@@ -13,10 +14,12 @@ class Ros_Subscriber_Publisher_Class{
         ~Ros_Subscriber_Publisher_Class( void );
         void odom_callback( const nav_msgs::Odometry::ConstPtr& msg);
         void laserscan_callback( const sensor_msgs::LaserScan::ConstPtr& msg);
+        void map_callback ( const  nav_msgs::OccupancyGrid::ConstPtr& msg);
         void timer_callback(const ros::TimerEvent& event);
         void check_params(ros::NodeHandle &N);
         nav_msgs::Odometry getOdom();
         sensor_msgs::LaserScan getLaserscan();
+        nav_msgs::OccupancyGrid getMap();
         int pub_rate;
 
     private:
@@ -24,9 +27,11 @@ class Ros_Subscriber_Publisher_Class{
         ros::Publisher pub;
         ros::Subscriber odomSub = NH.subscribe("/odom", 1, &Ros_Subscriber_Publisher_Class::odom_callback, this);
         ros::Subscriber laserSub = NH.subscribe("/scan", 1, &Ros_Subscriber_Publisher_Class::laserscan_callback, this);
+        ros::Subscriber mapSub = NH.subscribe("/map", 1, &Ros_Subscriber_Publisher_Class::map_callback, this);
         std_msgs::String my_message;
         nav_msgs::Odometry myOdomMsg;
         sensor_msgs::LaserScan myLaserscanMsg;
+        nav_msgs::OccupancyGrid myMapMsg;
         Eigen::Matrix<double, 3, 3> A;
 };
 
