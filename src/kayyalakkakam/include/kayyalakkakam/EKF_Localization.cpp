@@ -9,6 +9,7 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
     Sigma = Eigen::MatrixXd::Identity(6, 6);                                        // Initial covariance as Identity Matrix
     R = Eigen::MatrixXd::Identity(6, 6);                                            // Initial Process Noise Matrix as Identity Matrix
     g_function_jacobi = Eigen::MatrixXd::Identity(6, 6);                            // Initial Jacobian of the g_function
+    detectCirclesInMap();                                                           // Extract Features from Map
 
                                                                                     // Initialize the Visualization publishers
     initializeEKFPublishers(NH);
@@ -151,6 +152,8 @@ Eigen::MatrixXd EKF_Localization::updateSigma(Eigen::VectorXd input_mu, nav_msgs
         g_function_jacobi(1, 2) = -v/omega * sin(theta) + v/omega * sin(theta + omega*dt);
     }
 
+    // Normalize Angles!!!
+
     newSigma = g_function_jacobi * this->Sigma * g_function_jacobi.transpose() + this->R;
 
     return newSigma;
@@ -185,3 +188,92 @@ void EKF_Localization::run_EKF_Filter()
     this->prediction_step();
     this->correction_step();
 }
+
+/// Feature Extraction ///
+
+void EKF_Localization::detectCirclesInMap()
+{
+    std::string map_path = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/turtlebot3_world_map.pgm";
+    cv::Mat map_image = cv::imread(map_path, cv::COLOR_BGR2GRAY);
+    cv::Mat gaussianImg;
+    cv::Mat treshImg;
+    cv::Mat cannyImg;
+    cv::Mat colorImage;
+
+    if (map_image.empty()) {
+        std::cerr << "Failed to load image at path: " << map_path << std::endl;
+        return;
+    }
+
+    cv::cvtColor(map_image, colorImage, cv::COLOR_GRAY2BGR);
+
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Normal_Picture.jpg", map_image);
+
+
+    cv::GaussianBlur(map_image, gaussianImg, cv::Size(9,9), 3, 3);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Gaussian_Picture.jpg", gaussianImg);
+
+    cv::threshold(gaussianImg, treshImg,0,255,cv::THRESH_BINARY+cv::THRESH_OTSU);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Treshholded_Picture.jpg", treshImg);
+
+    cv::Canny(treshImg, cannyImg, 50, 150);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Canny_Picture.jpg", cannyImg);
+
+    std::vector<cv::Vec3f> circles;
+    cv::HoughCircles(cannyImg, circles, cv::HOUGH_GRADIENT, 1, cannyImg.rows/32, 100, 12, 1, 7);
+
+     for( size_t i = 0; i < circles.size(); i++ )
+    {
+        cv::Vec3i c = circles[i];
+        Circle detectedCircle;
+        cv::Point center = cv::Point(c[0], c[1]);
+        int radius = c[2];
+        
+        circle( colorImage, center, 1, cv::Scalar(0,255,255), 0.1, cv::LINE_AA);
+        circle( colorImage, center, radius, cv::Scalar(0,255,255), 0.1, cv::LINE_AA);
+        
+        detectedCircle.center = cv::Point(c[0], c[1]);
+        detectedCircle.radius = c[2];
+        detectedCirclesInMap.push_back(detectedCircle);
+    }
+
+    imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Map_With_Circles.jpg", colorImage);
+    
+    for ( int features = 0; features < detectedCirclesInMap.size(); features++)
+    {
+        WorldCoords world;
+        world.x = origin.x + detectedCirclesInMap[features].center.x * resolution;
+        world.y = origin.y + detectedCirclesInMap[features].center.y * resolution;
+        mapFeatures.push_back(world);   
+
+        std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/features.csv";
+
+        std::ofstream out_file(filename);
+        if (!out_file) {
+            std::cerr << "Failed to open file for writing.\n";
+            return;
+        }
+
+        // Set precision for better accuracy
+        out_file << std::fixed << std::setprecision(5);
+
+        for (const auto& coords : mapFeatures) {
+            out_file << coords.x << ", " << coords.y << '\n';
+        }
+
+        out_file.close();
+        ROS_INFO_STREAM("Features saved in world coordinates to " << filename << '\n');
+    }
+}
+
+void EKF_Localization::LidarToImage()
+{
+
+}
+
+void EKF_Localization::detectCircleInLidar()
+{
+    
+}
+
+/// Feature Extraction ///

@@ -114,8 +114,14 @@ catkin_package(
 #  LIBRARIES kayyalakkakam
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
-  CATKIN_DEPENDS roscpp actionlib move_base_msgs geometry_msgs tf pcl_conversions pcl_ros laser_geometry
+  CATKIN_DEPENDS roscpp actionlib move_base_msgs geometry_msgs tf pcl_conversions pcl_ros laser_geometry 
+  DEPENDS OpenCV
 )
+
+find_package(OpenCV REQUIRED)
+
+# Print OpenCV version
+message(STATUS "Found OpenCV: ${OpenCV_VERSION} found at ${OpenCV_INCLUDE_DIRS}")
 
 ###########
 ## Build ##
@@ -127,6 +133,7 @@ include_directories(
 # include
   include/${PROJECT_NAME}
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -221,4 +228,4 @@ add_executable(main_node src/code/main.cpp include/${PROJECT_NAME}/EKF_Localizat
 # Specify libraries to link a library or executable target against
 target_link_libraries(sendGoal_node ${catkin_LIBRARIES})
 target_link_libraries(featureExtractor_node ${catkin_LIBRARIES})
-target_link_libraries(main_node ${catkin_LIBRARIES})
+target_link_libraries(main_node ${catkin_LIBRARIES} ${OpenCV_LIBS})

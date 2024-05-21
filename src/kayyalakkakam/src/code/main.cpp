@@ -10,8 +10,9 @@ int main(int argc, char** argv){
 
     ros::Rate loop_rate(10);
 
+    slamer.run_EKF_Filter();
+
     while (ros::ok()) {
-        slamer.run_EKF_Filter();
         ros::spinOnce();
         loop_rate.sleep();
     }

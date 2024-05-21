@@ -3,7 +3,18 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
+#include <opencv2/opencv.hpp>
 #include "robot_class.h"
+
+struct Circle {
+    cv::Point center;
+    float radius;
+};
+
+struct WorldCoords {
+    double x;
+    double y;
+};
 
 class EKF_Localization
 {
@@ -30,6 +41,13 @@ class EKF_Localization
         void publishOdometryPath();
         /// Visualization Functions ///
 
+        /// Feature Extraction ///
+        void detectCirclesInMap();
+        void LidarToImage();
+        void detectCircleInLidar();
+        static void on_trackbar(int, void*);
+        /// Feature Extraction ///
+
     private:
         ros::NodeHandle NH;
         Ros_Subscriber_Publisher_Class robot;
@@ -44,4 +62,10 @@ class EKF_Localization
         ros::Publisher EKF_path_pub;    // EKF Path publisher 
         ros::Publisher Odometry_path_pub;    // EKF Path publisher 
         ros::Publisher marker_pub;  // Covariance Publisher
+
+        std::vector<Circle> detectedCirclesInMap;
+        std::vector<Circle> detectedCirclesInLidar;
+        std::vector<WorldCoords> mapFeatures;
+        double resolution = 0.050000;
+        WorldCoords origin = {-10.0, -10.0};
 };

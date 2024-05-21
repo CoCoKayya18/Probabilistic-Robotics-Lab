@@ -73,6 +73,9 @@
   <build_depend>laser_geometry</build_depend>
   <build_export_depend>laser_geometry</build_export_depend>
   <exec_depend>laser_geometry</exec_depend>
+  <!-- <build_depend>OpenCV</build_depend>
+  <build_export_depend>OpenCV</build_export_depend>
+  <exec_depend>OpenCV</exec_depend> -->
 
 
 
