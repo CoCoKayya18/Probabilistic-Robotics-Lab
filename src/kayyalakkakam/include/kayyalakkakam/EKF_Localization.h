@@ -43,7 +43,7 @@ class EKF_Localization
         void run_EKF_Filter();
         void printMuAndSigma();
 
-        void landmarkMatching();
+        void H_Function();
 
         /// Visualization Functions ///
         void publishEKFPath();

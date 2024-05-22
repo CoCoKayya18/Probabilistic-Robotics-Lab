@@ -211,11 +211,11 @@ Eigen::MatrixXd EKF_Localization::updateSigma(Eigen::VectorXd input_mu, nav_msgs
     return newSigma;
 }
 
-void EKF_Localization::landmarkMatching()
+void EKF_Localization::H_Function()
 {
     for (int features=0; detectedCirclesInLidar.size(); features++)
     {
-        int j = Landmark
+        int j;
     }
 }
 
