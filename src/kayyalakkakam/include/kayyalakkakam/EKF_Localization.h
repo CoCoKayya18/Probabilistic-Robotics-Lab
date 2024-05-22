@@ -1,9 +1,20 @@
 #include <vector>
-#include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
 #include <opencv2/opencv.hpp>
+#include <tf/transform_listener.h>
+#include <laser_geometry/laser_geometry.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac_model_circle.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include "robot_class.h"
 
 struct Circle {
@@ -33,22 +44,19 @@ class EKF_Localization
         void printMuAndSigma();
 
         /// Visualization Functions ///
-        void initializeEKFPublishers(ros::NodeHandle& nh);
         void publishEKFPath();
-        void initializeMarkerPublisher(ros::NodeHandle& nh);
         void publishCovariance();
-        void initializeOdometryPublishers(ros::NodeHandle& nh);
         void publishOdometryPath();
+        void publishRansacFeatures();
         /// Visualization Functions ///
 
         /// Feature Extraction ///
         void detectCirclesInMap();
         void LidarToImage();
-        void detectCircleInLidar();
+        void detectCircleInLidar(sensor_msgs::LaserScan input);
         /// Feature Extraction ///
 
         /// EKF Pose Publisher /// 
-        void initializeEKFPosePublisher(ros::NodeHandle& nh);
         void publishEKFPose();
         /// EKF Pose Publisher /// 
 
@@ -63,14 +71,17 @@ class EKF_Localization
         Eigen::MatrixXd R; // Process Noise
         Eigen::MatrixXd Q; // Measurement Noise
 
-        ros::Publisher EKF_path_pub;    // EKF Path publisher 
-        ros::Publisher Odometry_path_pub;    // EKF Path publisher 
-        ros::Publisher marker_pub;  // Covariance Publisher
-        ros::Publisher EKF_Pose_Publihser;
+        // ros::Publisher EKF_path_pub;    // EKF Path publisher 
+        // ros::Publisher Odometry_path_pub;    // EKF Path publisher 
+        // ros::Publisher marker_pub;  // Covariance Publisher
+        // ros::Publisher EKF_Pose_Publihser;
 
         std::vector<Circle> detectedCirclesInMap;
         std::vector<Circle> detectedCirclesInLidar;
         std::vector<WorldCoords> mapFeatures;
+        // std::vector<pcl::ModelCoefficients> lidarFeatures;
+        tf::TransformListener transformer;
+        laser_geometry::LaserProjection projector_;
         double resolution = 0.050000;
         WorldCoords origin = {-10.0, -10.0};
 };

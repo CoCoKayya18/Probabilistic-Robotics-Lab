@@ -82,7 +82,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
+      Size (m): 0.10000000149011612
       Style: Flat Squares
       Topic: /scan
       Unreliable: false
@@ -177,6 +177,7 @@ Visualization Manager:
         Odometry: true
         Odometry_Path: true
         PoseArray: true
+        RansacFeatures: true
         RobotModel: true
         TF: true
         Value: true
@@ -305,17 +306,17 @@ Visualization Manager:
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
-      Topic: /main_node/Odometry_path
+      Topic: /main_node/EKF_path
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /featureExtractor/visualization_feature_marker
       Name: Features
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 0.699999988079071
       Class: rviz/Map
       Color Scheme: map
@@ -343,6 +344,14 @@ Visualization Manager:
       Topic: /particlecloud
       Unreliable: false
       Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /main_node/ransac_features
+      Name: RansacFeatures
+      Namespaces:
+        circles: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -380,7 +389,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 89.16486358642578
+      Scale: 115.21791076660156
       Target Frame: <Fixed Frame>
       X: 0.593521773815155
       Y: -0.040479183197021484

@@ -10,22 +10,9 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
     R = Eigen::MatrixXd::Identity(3, 3);                                            // Initial Process Noise Matrix as Identity Matrix
     g_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the g_function
     detectCirclesInMap();                                                           // Extract Features from Map
-
-                                                                                    // Initialize the Visualization publishers
-    initializeEKFPublishers(NH);
-    initializeMarkerPublisher(NH);
-    initializeOdometryPublishers(NH);
-
-    initializeEKFPosePublisher(NH);
 };
 
 /// EKF Pose Publisher ///
-
- void EKF_Localization::initializeEKFPosePublisher(ros::NodeHandle& nh)
- {
-    EKF_Pose_Publihser = nh.advertise<nav_msgs::Path>("EKF_pose", 30, true);
- }
-
 
 void EKF_Localization::publishEKFPose()
 {
@@ -44,16 +31,14 @@ void EKF_Localization::publishEKFPose()
     tf::quaternionTFToMsg(q, q_msg);
     ekf_pose.pose.orientation = q_msg;
 
-    EKF_Pose_Publihser.publish(ekf_pose);
+    robot.publishEKFPose(ekf_pose);
+
 }
 
 /// EKF Pose Publisher ///
 
-/// Visualization Functions ///
 
-void EKF_Localization::initializeEKFPublishers(ros::NodeHandle& nh) {
-    EKF_path_pub = nh.advertise<nav_msgs::Path>("EKF_path", 30, true);
-}
+/// Visualization Functions ///
 
 void EKF_Localization::publishEKFPath() {
     static nav_msgs::Path path;
@@ -68,11 +53,9 @@ void EKF_Localization::publishEKFPath() {
     this_pose_stamped.header.frame_id = "map";
 
     path.poses.push_back(this_pose_stamped);
-    EKF_path_pub.publish(path);
-}
 
-void EKF_Localization::initializeOdometryPublishers(ros::NodeHandle& nh) {
-    Odometry_path_pub = nh.advertise<nav_msgs::Path>("Odometry_path", 30, true);
+    robot.publishEKFpath(path);
+
 }
 
 void EKF_Localization::publishOdometryPath() {
@@ -88,11 +71,8 @@ void EKF_Localization::publishOdometryPath() {
     this_pose_stamped.header.frame_id = "map";
 
     path.poses.push_back(this_pose_stamped);
-    Odometry_path_pub.publish(path);
-}
 
-void EKF_Localization::initializeMarkerPublisher(ros::NodeHandle& nh) {
-    marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 10);
+    robot.publishOdometryPath(path);
 }
 
 void EKF_Localization::publishCovariance() {
@@ -107,9 +87,7 @@ void EKF_Localization::publishCovariance() {
     marker.pose.position.y = mu(1);
     marker.pose.position.z = 0;
 
-                                                                                    // Assuming your covariance matrix is 6x6 and corresponds to x, y, theta
-                                                                                    // Extract the covariance for x and y
-    double sx = sqrt(Sigma(0, 0));                                          
+    double sx = sqrt(Sigma(0, 0));                                                  // Assuming your covariance matrix is 6x6 and corresponds to x, y, theta
     double sy = sqrt(Sigma(1, 1));                                          
     marker.scale.x = 2 * 2 * sx;                                                    // 2 sigma for visualization
     marker.scale.y = 2 * 2 * sy;                                            
@@ -120,7 +98,48 @@ void EKF_Localization::publishCovariance() {
     marker.color.g = 0.0;
     marker.color.b = 1.0;                                                           // Blue
 
-    marker_pub.publish(marker);
+    robot.publishCovariance(marker);
+}
+
+void EKF_Localization::publishRansacFeatures()
+{
+    ROS_INFO_STREAM("Publishing Ransac Feature Marker Array");
+
+    visualization_msgs::MarkerArray markerArray;
+
+    for (size_t i = 0; i < detectedCirclesInLidar.size(); i++) {
+        const auto& feature = detectedCirclesInLidar[i];
+        
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "map";  // Ensure this matches your coordinate system in RViz
+        marker.header.stamp = ros::Time::now();
+        marker.ns = "circles";
+        marker.id = i;
+        marker.type = visualization_msgs::Marker::CYLINDER;
+        marker.action = visualization_msgs::Marker::ADD;
+
+        marker.pose.position.x = feature.center.x;
+        marker.pose.position.y = feature.center.y;
+        marker.pose.position.z = 0;  
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+
+        marker.scale.x = feature.radius * 2;  
+        marker.scale.y = feature.radius * 2;  
+        marker.scale.z = 0.1;                 
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;  // Purple for visualization
+        marker.color.a = 0.8;  
+
+        marker.lifetime = ros::Duration();  
+
+        markerArray.markers.push_back(marker);
+    }
+
+    robot.publishRansacFeatures(markerArray);
 }
 
 /// Visualization Functions ///
@@ -204,13 +223,16 @@ void EKF_Localization::prediction_step()
     this->publishOdometryPath();
     this->publishEKFPose();
 
-    this->printMuAndSigma();
+    // this->printMuAndSigma();
 };
 
 void EKF_Localization::correction_step()
 {   
-    // ROS_INFO_STREAM("CORRECTION RUNNING");
+    ROS_INFO_STREAM("CORRECTION RUNNING");
     this->laserscanMessage = this->robot.getLaserscan();
+
+    detectCircleInLidar(laserscanMessage);
+    publishRansacFeatures();
 
 };
 
@@ -269,12 +291,20 @@ void EKF_Localization::detectCirclesInMap()
     }
 
     imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Map_With_Circles.jpg", colorImage);
+
+    float sumX = 0, sumY = 0;
+    for (const auto& circle : detectedCirclesInMap) {
+        sumX += circle.center.x;
+        sumY += circle.center.y;
+    }
+    float centerX = sumX / detectedCirclesInMap.size();
+    float centerY = sumY / detectedCirclesInMap.size();
     
     for ( int features = 0; features < detectedCirclesInMap.size(); features++)
     {
         WorldCoords world;
-        world.x = origin.x + detectedCirclesInMap[features].center.x * resolution;
-        world.y = origin.y + detectedCirclesInMap[features].center.y * resolution;
+        world.x = (detectedCirclesInMap[features].center.x - centerX) * resolution;
+        world.y = (detectedCirclesInMap[features].center.y - centerY) * resolution;
         mapFeatures.push_back(world);   
 
         std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/features.csv";
@@ -285,11 +315,10 @@ void EKF_Localization::detectCirclesInMap()
             return;
         }
 
-        // Set precision for better accuracy
-        out_file << std::fixed << std::setprecision(5);
+        out_file << std::fixed;
 
         for (const auto& coords : mapFeatures) {
-            out_file << coords.x << ", " << coords.y << '\n';
+            out_file << std::round(coords.x) << ", " << std::round(coords.y) << ", " << detectedCirclesInMap[features].radius << '\n';
         }
 
         out_file.close();
@@ -302,9 +331,97 @@ void EKF_Localization::LidarToImage()
 
 }
 
-void EKF_Localization::detectCircleInLidar()
+void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
 {
-    
+    sensor_msgs::PointCloud2 cloud2;
+
+    // Convert Lidar to point cloud and into the map frame
+    if (!transformer.waitForTransform("map", "base_scan", input.header.stamp, ros::Duration(0.5))) {
+    ROS_WARN("Waiting for the transform timed-out.");
+    return;
+    }
+
+    try {
+    projector_.transformLaserScanToPointCloud("map", input, cloud2, transformer);
+    } 
+    catch (tf::TransformException &ex) {
+        ROS_WARN("TF exception:\n%s", ex.what());
+        return;
+    }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromROSMsg(cloud2, *cloud);
+
+    // Check if the cloud is empty
+    if (cloud->points.empty()) {
+        ROS_WARN("Received an empty point cloud.");
+        return;
+    }
+
+    // Preprocess Lidar-Data with Median Filter 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(cloud);
+    sor.setMeanK(100);
+    sor.setStddevMulThresh(2.0);
+    sor.filter(*filtered);
+
+    // Prepare the model coefficients and inliers to store results
+    int circle_id = 0;
+    const int maxCircles = 1; // Limit the number of circles to detect
+
+    while (circle_id < maxCircles && !filtered->points.empty()) {
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+        pcl::SACSegmentation<pcl::PointXYZ> seg;
+        seg.setOptimizeCoefficients(true);
+        seg.setModelType(pcl::SACMODEL_CIRCLE2D);
+        seg.setMethodType(pcl::SAC_RANSAC);
+        seg.setMaxIterations(1000);
+        seg.setDistanceThreshold(0.02);
+        seg.setRadiusLimits(0.05, 0.15);
+
+        seg.setInputCloud(filtered);
+        seg.segment(*inliers, *coefficients);
+
+        if (inliers->indices.size() == 0) {
+            ROS_WARN("No additional circles found.");
+            break;
+        }
+
+        // Log the detected circle's parameters and add to lidarFeature
+        ROS_INFO("Detected circle %d with center (%f, %f) and radius %f",
+                 circle_id, coefficients->values[0], coefficients->values[1], coefficients->values[2]);
+
+        Circle feature;
+        feature.center.x = coefficients->values[0];
+        feature.center.y = coefficients->values[1];
+        feature.radius = coefficients->values[2];
+        detectedCirclesInLidar.push_back(feature);
+
+        ROS_INFO("Cloud size before removal: %zu", filtered->points.size());
+
+        pcl::ExtractIndices<pcl::PointXYZ> extract;
+        extract.setInputCloud(filtered);
+        extract.setIndices(inliers);
+        extract.setNegative(true);
+        extract.filter(*filtered);
+
+        ROS_INFO("Cloud size after removal: %zu", filtered->points.size());
+
+        circle_id++;
+
+        // Filter the Features, which are not in range of the real features
+        std::vector<Circle> filteredCircles;
+        for (const auto& circle : detectedCirclesInLidar) {
+            if (circle.center.x > -1.1 && circle.center.x < 1.1 && circle.center.y > -1.1 && circle.center.y < 1.1) {
+                filteredCircles.push_back(circle);
+            } else {
+                ROS_INFO_STREAM("Filtered out circle at x " << circle.center.x << " and y " << circle.center.y <<  "with radius" << circle.radius << "\n");
+            }
+        }
+        detectedCirclesInLidar = filteredCircles;
+    }
 }
 
 /// Feature Extraction ///

@@ -2,7 +2,11 @@
 
 Ros_Subscriber_Publisher_Class::Ros_Subscriber_Publisher_Class(ros::NodeHandle &N):NH(N){
     ROS_INFO_STREAM("Init My ROS Package");
-    pub = NH.advertise< std_msgs::String >("egal", 1 );
+    EKF_path_pub = NH.advertise< nav_msgs::Path >("EKF_path", 10 );
+    covariance_marker_pub = NH.advertise<visualization_msgs::Marker>("visualization_marker", 10);
+    Odometry_path_pub = NH.advertise<nav_msgs::Path>("Odometry_path", 30, true);
+    EKF_Pose_Publisher = NH.advertise<nav_msgs::Path>("EKF_pose", 30, true);
+    Ransac_Features_Publisher = NH.advertise<visualization_msgs::MarkerArray>("ransac_features", 10);
     check_params(NH);
 }
 
@@ -24,11 +28,11 @@ void Ros_Subscriber_Publisher_Class::odom_callback( const nav_msgs::Odometry::Co
     this->myMapMsg = *msg;
  }
 
-void Ros_Subscriber_Publisher_Class::timer_callback(const ros::TimerEvent& event){
-    ROS_INFO_STREAM( "Timer Callback" );
-    my_message.data = "mymessage";
-    pub.publish( my_message );
- }
+// void Ros_Subscriber_Publisher_Class::timer_callback(const ros::TimerEvent& event){
+//     ROS_INFO_STREAM( "Timer Callback" );
+//     my_message.data = "mymessage";
+//     pub.publish( my_message );
+//  }
 
 void Ros_Subscriber_Publisher_Class::check_params(ros::NodeHandle &N){
     ROS_INFO_STREAM( "Check Rate" );
@@ -52,4 +56,31 @@ sensor_msgs::LaserScan Ros_Subscriber_Publisher_Class::getLaserscan()
 nav_msgs::OccupancyGrid Ros_Subscriber_Publisher_Class::getMap()
 {
     return this->myMapMsg;
+}
+
+void Ros_Subscriber_Publisher_Class::publishEKFpath(nav_msgs::Path ekf_path)
+{
+    EKF_path_pub.publish(ekf_path);
+}
+
+void Ros_Subscriber_Publisher_Class::publishCovariance(visualization_msgs::Marker marker)
+{
+    covariance_marker_pub.publish(marker);
+}
+
+void Ros_Subscriber_Publisher_Class::publishOdometryPath(nav_msgs::Path odometry_path)
+{
+    Odometry_path_pub.publish(odometry_path);
+}
+
+
+
+void Ros_Subscriber_Publisher_Class::publishEKFPose(geometry_msgs::PoseStamped ekf_pose)
+{
+    EKF_Pose_Publisher.publish(ekf_pose);
+}
+
+void Ros_Subscriber_Publisher_Class::publishRansacFeatures(visualization_msgs::MarkerArray markerArray)
+{
+    Ransac_Features_Publisher.publish(markerArray);
 }
