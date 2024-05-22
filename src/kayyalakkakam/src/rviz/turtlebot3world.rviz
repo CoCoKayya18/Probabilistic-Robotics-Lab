@@ -166,7 +166,6 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
-        "": true
         Axes: true
         DepthCloud: true
         EKF_Path: true
@@ -177,6 +176,7 @@ Visualization Manager:
         Marker: true
         Odometry: true
         Odometry_Path: true
+        PoseArray: true
         RobotModel: true
         TF: true
         Value: true
@@ -332,7 +332,7 @@ Visualization Manager:
       Axes Radius: 0.009999999776482582
       Class: rviz/PoseArray
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
       Name: PoseArray
@@ -342,7 +342,7 @@ Visualization Manager:
       Shape: Arrow (Flat)
       Topic: /particlecloud
       Unreliable: false
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

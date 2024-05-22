@@ -8,13 +8,13 @@ int main(int argc, char** argv){
     ros::NodeHandle nh("~");
     EKF_Localization slamer(nh);
 
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(30);
 
-    slamer.run_EKF_Filter();
 
     while (ros::ok()) {
         ros::spinOnce();
         loop_rate.sleep();
+        slamer.run_EKF_Filter();
     }
 
     ROS_INFO_STREAM("CLOSING EVERYTHING");                                                           

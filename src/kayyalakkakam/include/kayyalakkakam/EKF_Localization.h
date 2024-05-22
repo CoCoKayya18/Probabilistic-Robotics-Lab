@@ -45,8 +45,12 @@ class EKF_Localization
         void detectCirclesInMap();
         void LidarToImage();
         void detectCircleInLidar();
-        static void on_trackbar(int, void*);
         /// Feature Extraction ///
+
+        /// EKF Pose Publisher /// 
+        void initializeEKFPosePublisher(ros::NodeHandle& nh);
+        void publishEKFPose();
+        /// EKF Pose Publisher /// 
 
     private:
         ros::NodeHandle NH;
@@ -62,6 +66,7 @@ class EKF_Localization
         ros::Publisher EKF_path_pub;    // EKF Path publisher 
         ros::Publisher Odometry_path_pub;    // EKF Path publisher 
         ros::Publisher marker_pub;  // Covariance Publisher
+        ros::Publisher EKF_Pose_Publihser;
 
         std::vector<Circle> detectedCirclesInMap;
         std::vector<Circle> detectedCirclesInLidar;

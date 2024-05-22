@@ -4,23 +4,55 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
 {
     ROS_INFO_STREAM("Initializing EKF NODE");
                                                                                     // Initialize the state vector and covariance matrix
-    mu = Eigen::VectorXd(6);
-    mu << 1.5, 1.5, 3.1415, 0, 0, 0;                                                // Initiate State vector
-    Sigma = Eigen::MatrixXd::Identity(6, 6);                                        // Initial covariance as Identity Matrix
-    R = Eigen::MatrixXd::Identity(6, 6);                                            // Initial Process Noise Matrix as Identity Matrix
-    g_function_jacobi = Eigen::MatrixXd::Identity(6, 6);                            // Initial Jacobian of the g_function
+    mu = Eigen::VectorXd(3);
+    mu << 1.5, 1.5, 3.1415;                                                // Initiate State vector
+    Sigma = Eigen::MatrixXd::Identity(3, 3);                                        // Initial covariance as Identity Matrix
+    R = Eigen::MatrixXd::Identity(3, 3);                                            // Initial Process Noise Matrix as Identity Matrix
+    g_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the g_function
     detectCirclesInMap();                                                           // Extract Features from Map
 
                                                                                     // Initialize the Visualization publishers
     initializeEKFPublishers(NH);
     initializeMarkerPublisher(NH);
     initializeOdometryPublishers(NH);
+
+    initializeEKFPosePublisher(NH);
 };
+
+/// EKF Pose Publisher ///
+
+ void EKF_Localization::initializeEKFPosePublisher(ros::NodeHandle& nh)
+ {
+    EKF_Pose_Publihser = nh.advertise<nav_msgs::Path>("EKF_pose", 30, true);
+ }
+
+
+void EKF_Localization::publishEKFPose()
+{
+    geometry_msgs::PoseStamped ekf_pose;
+    ekf_pose.header.stamp = ros::Time::now();
+    ekf_pose.header.frame_id = "map";
+
+    // Set the position from the EKF state vector
+    ekf_pose.pose.position.x = mu(0);
+    ekf_pose.pose.position.y = mu(1);
+    ekf_pose.pose.position.z = 0;  
+
+    // Set the orientation from the EKF state vector
+    tf::Quaternion q = tf::createQuaternionFromYaw(mu(2));
+    geometry_msgs::Quaternion q_msg;
+    tf::quaternionTFToMsg(q, q_msg);
+    ekf_pose.pose.orientation = q_msg;
+
+    EKF_Pose_Publihser.publish(ekf_pose);
+}
+
+/// EKF Pose Publisher ///
 
 /// Visualization Functions ///
 
 void EKF_Localization::initializeEKFPublishers(ros::NodeHandle& nh) {
-    EKF_path_pub = nh.advertise<nav_msgs::Path>("EKF_path", 10, true);
+    EKF_path_pub = nh.advertise<nav_msgs::Path>("EKF_path", 30, true);
 }
 
 void EKF_Localization::publishEKFPath() {
@@ -40,7 +72,7 @@ void EKF_Localization::publishEKFPath() {
 }
 
 void EKF_Localization::initializeOdometryPublishers(ros::NodeHandle& nh) {
-    Odometry_path_pub = nh.advertise<nav_msgs::Path>("Odometry_path", 10, true);
+    Odometry_path_pub = nh.advertise<nav_msgs::Path>("Odometry_path", 30, true);
 }
 
 void EKF_Localization::publishOdometryPath() {
@@ -116,9 +148,9 @@ Eigen::VectorXd EKF_Localization::g_function(Eigen::VectorXd input_mu, nav_msgs:
     double v = odometry.twist.twist.linear.x;                                       // Linear velocity from odometry
     double omega = odometry.twist.twist.angular.z;                                  // Angular velocity from odometry
     double theta = input_mu(2);                                                     // Orientation from the state vector
-    double dt = 0.333;                                                              // Time step, set to odometry publishing frequency
+    double dt = 0.0333;                                                              // Time step, set to odometry publishing frequency
 
-    Eigen::VectorXd mu_delta(6);
+    Eigen::VectorXd mu_delta(3);
     if (std::abs(omega) < 1e-6) {                                                   // Avoid division by zero by providing a small threshold
         mu_delta(0) = v * dt * cos(theta);  
         mu_delta(1) = v * dt * sin(theta);
@@ -128,9 +160,8 @@ Eigen::VectorXd EKF_Localization::g_function(Eigen::VectorXd input_mu, nav_msgs:
         mu_delta(1) = (v/omega) * cos(theta) - (v/omega) * cos(theta + omega*dt);   // delta y
         mu_delta(2) = omega * dt;                                                   // delta theta
     }                                                                               // delta theta
-    mu_delta(3) = odometry.twist.twist.linear.x;
-    mu_delta(4) = 0;
-    mu_delta(5) = odometry.twist.twist.angular.z;
+
+    mu_delta(2) = atan2(sin(mu_delta(2)), cos(mu_delta(2)));
 
     return mu_delta;
 };
@@ -140,7 +171,9 @@ Eigen::MatrixXd EKF_Localization::updateSigma(Eigen::VectorXd input_mu, nav_msgs
     double v = odometry.twist.twist.linear.x;                                       // Linear velocity from odometry
     double omega = odometry.twist.twist.angular.z;                                  // Angular velocity from odometry
     double theta = input_mu(2);                                                     // Orientation from the state vector
-    double dt = 0.333;                                                              // Time step, set to odometry publishing frequency
+    double dt = 0.0333;                                                              // Time step, set to odometry publishing frequency
+
+    theta = atan2(sin(theta), cos(theta));
 
     Eigen::MatrixXd newSigma;
     
@@ -152,8 +185,6 @@ Eigen::MatrixXd EKF_Localization::updateSigma(Eigen::VectorXd input_mu, nav_msgs
         g_function_jacobi(1, 2) = -v/omega * sin(theta) + v/omega * sin(theta + omega*dt);
     }
 
-    // Normalize Angles!!!
-
     newSigma = g_function_jacobi * this->Sigma * g_function_jacobi.transpose() + this->R;
 
     return newSigma;
@@ -163,15 +194,15 @@ void EKF_Localization::prediction_step()
 {
     ROS_INFO_STREAM("PREDICTION RUNNING");
     this->odomMessage = this->robot.getOdom();
-    mu(3) = 0;
-    mu(4) = 0;
-    mu(5) = 0;
+
     mu = mu + g_function(mu, this->odomMessage);
+    mu(2) = atan2(sin(mu(2)), cos(mu(2)));
     Sigma = updateSigma(mu, this->odomMessage);
 
     this->publishEKFPath();
     this->publishCovariance();
     this->publishOdometryPath();
+    this->publishEKFPose();
 
     this->printMuAndSigma();
 };
