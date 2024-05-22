@@ -5,9 +5,11 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
     ROS_INFO_STREAM("Initializing EKF NODE");
                                                                                     // Initialize the state vector and covariance matrix
     mu = Eigen::VectorXd(3);
-    mu << 1.5, 1.5, 3.1415;                                                // Initiate State vector
+    mu << 1.5, 1.5, 3.1415;                                                         // Initiate State vector
     Sigma = Eigen::MatrixXd::Identity(3, 3);                                        // Initial covariance as Identity Matrix
     R = Eigen::MatrixXd::Identity(3, 3);                                            // Initial Process Noise Matrix as Identity Matrix
+    Q = Eigen::MatrixXd::Identity(3,3);
+    Q << sensor_noise, 0, 0, 0, sensor_noise, 0, 0, 0, 1;
     g_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the g_function
     detectCirclesInMap();                                                           // Extract Features from Map
 };
@@ -209,6 +211,14 @@ Eigen::MatrixXd EKF_Localization::updateSigma(Eigen::VectorXd input_mu, nav_msgs
     return newSigma;
 }
 
+void EKF_Localization::landmarkMatching()
+{
+    for (int features=0; detectedCirclesInLidar.size(); features++)
+    {
+        int j = Landmark
+    }
+}
+
 void EKF_Localization::prediction_step()
 {
     ROS_INFO_STREAM("PREDICTION RUNNING");
@@ -233,6 +243,7 @@ void EKF_Localization::correction_step()
 
     detectCircleInLidar(laserscanMessage);
     publishRansacFeatures();
+    landmarkMatching();
 
 };
 
@@ -307,7 +318,7 @@ void EKF_Localization::detectCirclesInMap()
         world.y = (detectedCirclesInMap[features].center.y - centerY) * resolution;
         mapFeatures.push_back(world);   
 
-        std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/features.csv";
+        std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/map_features.csv";
 
         std::ofstream out_file(filename);
         if (!out_file) {
@@ -318,17 +329,13 @@ void EKF_Localization::detectCirclesInMap()
         out_file << std::fixed;
 
         for (const auto& coords : mapFeatures) {
-            out_file << std::round(coords.x) << ", " << std::round(coords.y) << ", " << detectedCirclesInMap[features].radius << '\n';
+            float radius_in_world = detectedCirclesInMap[features].radius * resolution;
+            out_file << coords.x << ", " << coords.y << ", " << radius_in_world << '\n';
         }
 
         out_file.close();
-        ROS_INFO_STREAM("Features saved in world coordinates to " << filename << '\n');
+        // ROS_INFO_STREAM("Map Features saved in world coordinates to " << filename << '\n');
     }
-}
-
-void EKF_Localization::LidarToImage()
-{
-
 }
 
 void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
@@ -358,19 +365,11 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
         return;
     }
 
-    // Preprocess Lidar-Data with Median Filter 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    sor.setInputCloud(cloud);
-    sor.setMeanK(100);
-    sor.setStddevMulThresh(2.0);
-    sor.filter(*filtered);
-
     // Prepare the model coefficients and inliers to store results
     int circle_id = 0;
     const int maxCircles = 1; // Limit the number of circles to detect
 
-    while (circle_id < maxCircles && !filtered->points.empty()) {
+    while (circle_id < maxCircles && !cloud->points.empty()) {
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
         pcl::SACSegmentation<pcl::PointXYZ> seg;
@@ -379,9 +378,9 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
         seg.setMethodType(pcl::SAC_RANSAC);
         seg.setMaxIterations(1000);
         seg.setDistanceThreshold(0.02);
-        seg.setRadiusLimits(0.05, 0.15);
+        seg.setRadiusLimits(0.05, 0.2);
 
-        seg.setInputCloud(filtered);
+        seg.setInputCloud(cloud);
         seg.segment(*inliers, *coefficients);
 
         if (inliers->indices.size() == 0) {
@@ -390,8 +389,7 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
         }
 
         // Log the detected circle's parameters and add to lidarFeature
-        ROS_INFO("Detected circle %d with center (%f, %f) and radius %f",
-                 circle_id, coefficients->values[0], coefficients->values[1], coefficients->values[2]);
+        // ROS_INFO("Detected circle %d with center (%f, %f) and radius %f", circle_id, coefficients->values[0], coefficients->values[1], coefficients->values[2]);
 
         Circle feature;
         feature.center.x = coefficients->values[0];
@@ -399,28 +397,43 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
         feature.radius = coefficients->values[2];
         detectedCirclesInLidar.push_back(feature);
 
-        ROS_INFO("Cloud size before removal: %zu", filtered->points.size());
+        // ROS_INFO("Cloud size before inlier removal: %zu", cloud->points.size());
 
         pcl::ExtractIndices<pcl::PointXYZ> extract;
-        extract.setInputCloud(filtered);
+        extract.setInputCloud(cloud);
         extract.setIndices(inliers);
         extract.setNegative(true);
-        extract.filter(*filtered);
+        extract.filter(*cloud);
 
-        ROS_INFO("Cloud size after removal: %zu", filtered->points.size());
+        // ROS_INFO("Cloud size after inlier removal: %zu", cloud->points.size());
 
         circle_id++;
 
         // Filter the Features, which are not in range of the real features
         std::vector<Circle> filteredCircles;
         for (const auto& circle : detectedCirclesInLidar) {
-            if (circle.center.x > -1.1 && circle.center.x < 1.1 && circle.center.y > -1.1 && circle.center.y < 1.1) {
+            if (circle.center.x > -1.2 && circle.center.x < 1.2 && circle.center.y > -1.2 && circle.center.y < 1.2) {
                 filteredCircles.push_back(circle);
             } else {
-                ROS_INFO_STREAM("Filtered out circle at x " << circle.center.x << " and y " << circle.center.y <<  "with radius" << circle.radius << "\n");
+                // ROS_INFO_STREAM("Filtered out circle at x " << circle.center.x << " and y " << circle.center.y <<  "with radius" << circle.radius << "\n");
             }
         }
         detectedCirclesInLidar = filteredCircles;
+
+        if (!detectedCirclesInLidar.empty()) {
+            std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/ransac_features.csv";
+            std::ofstream out_file(filename);
+            if (!out_file) {
+                std::cerr << "Failed to open file for writing.\n";
+                return;
+            }
+            out_file << std::fixed;
+            for (const auto& circle : detectedCirclesInLidar) {
+                out_file << circle.center.x << ", " << circle.center.y << ", " << circle.radius << '\n';
+            }
+            out_file.close();
+            // ROS_INFO_STREAM("Ransac Features saved in world coordinates to " << filename << '\n');
+        }
     }
 }
 

@@ -18,7 +18,7 @@
 #include "robot_class.h"
 
 struct Circle {
-    cv::Point center;
+    cv::Point2f center;
     float radius;
 };
 
@@ -43,6 +43,8 @@ class EKF_Localization
         void run_EKF_Filter();
         void printMuAndSigma();
 
+        void landmarkMatching();
+
         /// Visualization Functions ///
         void publishEKFPath();
         void publishCovariance();
@@ -52,7 +54,6 @@ class EKF_Localization
 
         /// Feature Extraction ///
         void detectCirclesInMap();
-        void LidarToImage();
         void detectCircleInLidar(sensor_msgs::LaserScan input);
         /// Feature Extraction ///
 
@@ -70,6 +71,7 @@ class EKF_Localization
         Eigen::MatrixXd g_function_jacobi;
         Eigen::MatrixXd R; // Process Noise
         Eigen::MatrixXd Q; // Measurement Noise
+        float sensor_noise = 0.1;
 
         // ros::Publisher EKF_path_pub;    // EKF Path publisher 
         // ros::Publisher Odometry_path_pub;    // EKF Path publisher 
