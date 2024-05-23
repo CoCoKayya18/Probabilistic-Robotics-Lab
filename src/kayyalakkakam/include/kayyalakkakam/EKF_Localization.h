@@ -43,7 +43,7 @@ class EKF_Localization
         void run_EKF_Filter();
         void printMuAndSigma();
 
-        void h_Function(const Circle& detectedFeature, const pcl::PointXYZ& mapFeature);
+        void h_Function(std::vector<int> Indices);
         std::vector<int> landmarkMatching(const std::vector<Circle>& detectedFeatures);
 
         /// Visualization Functions ///
@@ -87,7 +87,8 @@ class EKF_Localization
         std::vector<Circle> detectedCirclesInMap;
         std::vector<Circle> detectedCirclesInLidar;
         std::vector<WorldCoords> mapFeatures;
-        pcl::PointCloud<pcl::PointXYZ> map_cloud;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud;
+        pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
         // std::vector<pcl::ModelCoefficients> lidarFeatures;
         tf::TransformListener transformer;
         laser_geometry::LaserProjection projector_;
