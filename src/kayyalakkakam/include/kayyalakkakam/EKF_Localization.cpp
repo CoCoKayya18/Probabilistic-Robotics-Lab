@@ -5,12 +5,14 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
     ROS_INFO_STREAM("Initializing EKF NODE");
                                                                                     // Initialize the state vector and covariance matrix
     mu = Eigen::VectorXd(3);
-    mu << 1.5, 1.5, 3.1415;                                                         // Initiate State vector
+    mu << 1.5, 1.5, 3.1415; 
+    delta = Eigen::VectorXd(3);                                                        // Initiate State vector
     Sigma = Eigen::MatrixXd::Identity(3, 3);                                        // Initial covariance as Identity Matrix
     R = Eigen::MatrixXd::Identity(3, 3);                                            // Initial Process Noise Matrix as Identity Matrix
     Q = Eigen::MatrixXd::Identity(3,3);
     Q << sensor_noise, 0, 0, 0, sensor_noise, 0, 0, 0, 1;
     g_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the g_function
+    h_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the h_function
     detectCirclesInMap();                                                           // Extract Features from Map
 };
 
@@ -211,12 +213,30 @@ Eigen::MatrixXd EKF_Localization::updateSigma(Eigen::VectorXd input_mu, nav_msgs
     return newSigma;
 }
 
-void EKF_Localization::H_Function()
+void EKF_Localization::h_Function(const Circle& detectedFeature, const pcl::PointXYZ& mapFeature)
 {
     for (int features=0; detectedCirclesInLidar.size(); features++)
     {
-        int j;
+        ROS_INFO_STREAM("Processing measurement for detected feature at (" << detectedFeature.center.x << ", " << detectedFeature.center.y << ") matched to map feature at (" << mapFeature.x << ", " << mapFeature.y << ")");
     }
+}
+
+std::vector<int> EKF_Localization::landmarkMatching(const std::vector<Circle>& detectedFeatures)
+{
+    pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+    kdtree.setInputCloud(&map_cloud);
+
+    std::vector<int> indices(detectedFeatures.size(), -1);
+        for (size_t i = 0; i < detectedFeatures.size(); ++i) {
+            pcl::PointXYZ searchPoint(detectedFeatures[i].center.x, detectedFeatures[i].center.y, 0);
+            std::vector<int> pointIdxNKNSearch(1);
+            std::vector<float> pointNKNSquaredDistance(1);
+
+            if (kdtree.nearestKSearch(searchPoint, 1, pointIdxNKNSearch, pointNKNSquaredDistance) > 0) {
+                indices[i] = pointIdxNKNSearch[0];
+            }
+        }
+        return indices;
 }
 
 void EKF_Localization::prediction_step()
@@ -242,8 +262,17 @@ void EKF_Localization::correction_step()
     this->laserscanMessage = this->robot.getLaserscan();
 
     detectCircleInLidar(laserscanMessage);
+
+    std::vector<int> matchedIndices = landmarkMatching(detectedCirclesInLidar);
+
+    // Process each matched feature
+    for (int i = 0; i < detectedCirclesInLidar.size(); ++i) {
+        if (matchedIndices[i] != -1) {
+            h_Function(detectedCirclesInLidar[i], map_cloud.points[matchedIndices[i]]);
+        }
+    }
+
     publishRansacFeatures();
-    landmarkMatching();
 
 };
 
@@ -331,6 +360,7 @@ void EKF_Localization::detectCirclesInMap()
         for (const auto& coords : mapFeatures) {
             float radius_in_world = detectedCirclesInMap[features].radius * resolution;
             out_file << coords.x << ", " << coords.y << ", " << radius_in_world << '\n';
+            map_cloud.push_back(pcl::PointXYZ(coords.x, coords.y, 0));
         }
 
         out_file.close();

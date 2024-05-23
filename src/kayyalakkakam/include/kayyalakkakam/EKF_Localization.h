@@ -12,9 +12,9 @@
 #include <pcl/sample_consensus/sac_model_circle.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/filters/statistical_outlier_removal.h>
 #include "robot_class.h"
 
 struct Circle {
@@ -43,7 +43,8 @@ class EKF_Localization
         void run_EKF_Filter();
         void printMuAndSigma();
 
-        void H_Function();
+        void h_Function(const Circle& detectedFeature, const pcl::PointXYZ& mapFeature);
+        std::vector<int> landmarkMatching(const std::vector<Circle>& detectedFeatures);
 
         /// Visualization Functions ///
         void publishEKFPath();
@@ -66,9 +67,14 @@ class EKF_Localization
         Ros_Subscriber_Publisher_Class robot;
         nav_msgs::Odometry odomMessage;
         sensor_msgs::LaserScan laserscanMessage;
+
         Eigen::VectorXd mu; // State vector: [x, y, theta, vx, vy, vtheta]
         Eigen::MatrixXd Sigma; // Covariance matrix
         Eigen::MatrixXd g_function_jacobi;
+
+        Eigen::VectorXd delta;
+        Eigen::MatrixXd h_function_jacobi;
+
         Eigen::MatrixXd R; // Process Noise
         Eigen::MatrixXd Q; // Measurement Noise
         float sensor_noise = 0.1;
@@ -81,6 +87,7 @@ class EKF_Localization
         std::vector<Circle> detectedCirclesInMap;
         std::vector<Circle> detectedCirclesInLidar;
         std::vector<WorldCoords> mapFeatures;
+        pcl::PointCloud<pcl::PointXYZ> map_cloud;
         // std::vector<pcl::ModelCoefficients> lidarFeatures;
         tf::TransformListener transformer;
         laser_geometry::LaserProjection projector_;
