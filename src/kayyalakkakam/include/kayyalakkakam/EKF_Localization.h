@@ -3,6 +3,7 @@
 #include <tf/transform_broadcaster.h>
 #include <opencv2/opencv.hpp>
 #include <tf/transform_listener.h>
+#include <cmath>
 #include <laser_geometry/laser_geometry.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
@@ -25,6 +26,7 @@ struct Circle {
 struct WorldCoords {
     double x;
     double y;
+    double radius;
 };
 
 class EKF_Localization
@@ -73,7 +75,10 @@ class EKF_Localization
         Eigen::MatrixXd g_function_jacobi;
 
         Eigen::VectorXd delta;
+        Eigen::VectorXd z_hat;
         Eigen::MatrixXd h_function_jacobi;
+
+        Eigen::MatrixXd KalmanGain;
 
         Eigen::MatrixXd R; // Process Noise
         Eigen::MatrixXd Q; // Measurement Noise
@@ -94,4 +99,5 @@ class EKF_Localization
         laser_geometry::LaserProjection projector_;
         double resolution = 0.050000;
         WorldCoords origin = {-10.0, -10.0};
+        const int maxRansacFeatureSize = 50;
 };
