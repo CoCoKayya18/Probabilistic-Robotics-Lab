@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv){
 
-    ros::init(argc, argv, "my_ros_node");                                                               
+    ros::init(argc, argv, "main_node");                                                               
     ROS_INFO_STREAM("Main Node started");
     ros::NodeHandle nh("~");
     EKF_Localization slamer(nh);

@@ -4,17 +4,22 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
 {
     ROS_INFO_STREAM("Initializing EKF NODE");
                                                                                     // Initialize the state vector and covariance matrix
-    mu = Eigen::VectorXd(3);
+    mu = Eigen::VectorXd(3);                                                        // Initiate State vector
     mu << 1.5, 1.5, 3.1415; 
     delta = Eigen::VectorXd(3);
-    z_hat = Eigen::VectorXd(3);                                                        // Initiate State vector
+    z_hat = Eigen::VectorXd(3);
+    z_polar = Eigen::VectorXd(3);
+    z_difference = Eigen::VectorXd(3);                                                     
     Sigma = Eigen::MatrixXd::Identity(3, 3);                                        // Initial covariance as Identity Matrix
     R = Eigen::MatrixXd::Identity(3, 3);                                            // Initial Process Noise Matrix as Identity Matrix
+    R << process_noise, 0, 0, 0, process_noise, 0, 0, 0, process_noise;
     Q = Eigen::MatrixXd::Identity(3,3);
-    KalmanGain = Eigen::MatrixXd::Identity(3,3);
     Q << sensor_noise, 0, 0, 0, sensor_noise, 0, 0, 0, 1;
+    KalmanGain = Eigen::MatrixXd::Identity(3,3);
     g_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the g_function
     h_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the h_function
+    Kalman_Sensor_Sum_for_Mu = Eigen::VectorXd(3);
+    Kalman_H_Matrix_Sigma_Sum_For_Sigma = Eigen::MatrixXd::Identity(3, 3); 
     map_cloud.reset(new pcl::PointCloud<pcl::PointXYZ>());                          // Initialize Space for map feature point cloud
     detectCirclesInMap();                                                           // Extract Features from Map
 };
@@ -110,7 +115,7 @@ void EKF_Localization::publishCovariance() {
 
 void EKF_Localization::publishRansacFeatures()
 {
-    ROS_INFO_STREAM("Publishing Ransac Feature Marker Array");
+    // ROS_INFO_STREAM("Publishing Ransac Feature Marker Array");
 
     visualization_msgs::MarkerArray markerArray;
 
@@ -219,45 +224,76 @@ Eigen::MatrixXd EKF_Localization::updateSigma(Eigen::VectorXd input_mu, nav_msgs
 void EKF_Localization::h_Function(std::vector<int> Indices)
 {
     for (size_t i = 0; i < detectedCirclesInLidar.size(); ++i) {
+
+        // ROS_INFO_STREAM("Lidar Feature Size: " << detectedCirclesInLidar.size() << "\n");
+        // ROS_INFO_STREAM("Indices size: " << Indices.size() << "\n");
+
         if (Indices[i] != -1) { 
+
+            // ROS_INFO_STREAM("Current Index: " << Indices[i] << "\n");
             auto detectedFeature = detectedCirclesInLidar[i];
             auto mapFeature = mapFeatures[Indices[i]];
 
+            z_polar << std::sqrt(std::pow(detectedFeature.center.x, 2) + std::pow(detectedFeature.center.y, 2)), std::atan2(detectedFeature.center.y, detectedFeature.center.x), 0;            
 
             delta(0) = mapFeature.x - mu(0);
             delta(1) = mapFeature.y - mu(1);
 
-            double q = delta.squaredNorm();
+            q = delta.squaredNorm();
 
             z_hat << std::sqrt(q),
                      std::atan2(delta.y(), delta.x()) - mu(2),
-                     mapFeature.radius;
+                     0;
 
-            h_function_jacobi << delta.x() / std::sqrt(q), delta.y() / std::sqrt(q), 0,
-                                 -delta.y() / q, delta.x() / q, -1,
+            h_function_jacobi << delta.x() / std::sqrt(q), - delta.y() / std::sqrt(q), 0,
+                                 delta.y() / q, delta.x() / q, -1/q,
                                  0, 0, 0;
+
+            // h_function_jacobi = h_function_jacobi.array().isNaN().select(0, h_function_jacobi);
 
             Eigen::MatrixXd S = h_function_jacobi * Sigma * h_function_jacobi.transpose() + Q;
             KalmanGain = Sigma * h_function_jacobi.transpose() * S.inverse();
 
-            Eigen::Vector3d z_difference;
-            z_difference << detectedFeature.center.x - z_hat(0),
-                             detectedFeature.center.y - z_hat(1),
-                             detectedFeature.radius - z_hat(2);
+            z_difference = z_polar - z_hat;
 
-            mu = mu + KalmanGain * z_difference;
-            Sigma = (Eigen::MatrixXd::Identity(mu.size(), mu.size()) - KalmanGain * h_function_jacobi) * Sigma;
+            Kalman_Sensor_Sum_for_Mu = Kalman_Sensor_Sum_for_Mu + KalmanGain * z_difference;
+            Kalman_H_Matrix_Sigma_Sum_For_Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma + (Eigen::MatrixXd::Identity(mu.size(), mu.size()) - KalmanGain * h_function_jacobi);
+
+            // ROS_INFO_STREAM("Map Feature: x=" << mapFeature.x << ", y=" << mapFeature.y << ", radius=" << mapFeature.radius);
+            // ROS_INFO_STREAM("Detected Feature: x=" << detectedFeature.center.x << ", y=" << detectedFeature.center.y << ", radius=" << detectedFeature.radius);
+            // ROS_INFO_STREAM("Delta: [" << delta(0) << ", " << delta(1) << "]");
+            // ROS_INFO_STREAM("q (squared norm of delta): " << q);
+            ROS_INFO_STREAM("z_hat: [" << z_hat(0) << ", " << z_hat(1) << ", " << z_hat(2) << "]");
+            // ROS_INFO_STREAM("Kalman Gain (K): \n" << KalmanGain);
+            // ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]");
+
+
         } 
-        
+
         else {
             ROS_WARN_STREAM("No valid match for detected feature");
-        }
+        }        
     }
+
+    // ROS_INFO_STREAM("Debug Information: \n");
+    // ROS_INFO_STREAM("Delta: [" << delta(0) << ", " << delta(1) << "]\n");
+    // ROS_INFO_STREAM("q (squared norm of delta): " << q << "\n");
+    // ROS_INFO_STREAM("Predicted Measurement (z_hat): [" << z_hat(0) << ", " << z_hat(1) << ", " << z_hat(2) << "]\n");
+    // ROS_INFO_STREAM("Measurement Function Jacobian (H): \n" << h_function_jacobi << "\n");
+    // ROS_INFO_STREAM("Kalman Gain (K): \n" << KalmanGain << "\n");
+    // ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]\n");
+    // ROS_INFO_STREAM("Kalman Gain weighted sum for mu update (Kalman_Sensor_Sum_for_Mu): \n" << Kalman_Sensor_Sum_for_Mu << "\n");
+    // ROS_INFO_STREAM("Sigma update sum part (Kalman_H_Matrix_Sigma_Sum_For_Sigma): \n" << Kalman_H_Matrix_Sigma_Sum_For_Sigma << "\n");
+    mu = mu + Kalman_Sensor_Sum_for_Mu;
+    Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma * Sigma; 
 }
 
 std::vector<int> EKF_Localization::landmarkMatching(const std::vector<Circle>& detectedFeatures)
 {
     kdtree.setInputCloud(map_cloud);
+
+    // ROS_INFO_STREAM("Number of map features: " << mapFeatures.size());
+    // ROS_INFO_STREAM("Number of points in map cloud: " << map_cloud->points.size());
 
     std::vector<int> indices(detectedFeatures.size(), -1);
         for (size_t i = 0; i < detectedFeatures.size(); ++i) {
@@ -296,7 +332,7 @@ void EKF_Localization::correction_step()
 
     detectCircleInLidar(laserscanMessage);
 
-    ROS_INFO("Detected %lu circles in LIDAR data.", detectedCirclesInLidar.size());
+    // ROS_INFO("Detected %lu circles in LIDAR data.", detectedCirclesInLidar.size());
 
     std::vector<int> matchedIndices = landmarkMatching(detectedCirclesInLidar);
 
@@ -307,7 +343,6 @@ void EKF_Localization::correction_step()
     publishCovariance();
     publishEKFPose();
     printMuAndSigma();
-
 };
 
 void EKF_Localization::run_EKF_Filter()
@@ -347,7 +382,7 @@ void EKF_Localization::detectCirclesInMap()
     cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Canny_Picture.jpg", cannyImg);
 
     std::vector<cv::Vec3f> circles;
-    cv::HoughCircles(cannyImg, circles, cv::HOUGH_GRADIENT, 1, cannyImg.rows/32, 100, 12, 1, 7);
+    cv::HoughCircles(cannyImg, circles, cv::HOUGH_GRADIENT, 1, cannyImg.rows/32, 100, 12, 1, 7);  
 
      for( size_t i = 0; i < circles.size(); i++ )
     {
@@ -380,26 +415,31 @@ void EKF_Localization::detectCirclesInMap()
         world.x = (detectedCirclesInMap[features].center.x - centerX) * resolution;
         world.y = (detectedCirclesInMap[features].center.y - centerY) * resolution;
         world.radius = detectedCirclesInMap[features].radius * resolution;
-        mapFeatures.push_back(world);   
+        mapFeatures.push_back(world);  
+        // ROS_INFO_STREAM("Map Feature: x=" << mapFeatures[features].x << ", y=" << mapFeatures[features].y << ", radius=" << mapFeatures[features].radius);
 
-        std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/map_features.csv";
-
-        std::ofstream out_file(filename);
-        if (!out_file) {
-            std::cerr << "Failed to open file for writing.\n";
-            return;
-        }
-
-        out_file << std::fixed;
-
-        for (const auto& coords : mapFeatures) {
-            out_file << coords.x << ", " << coords.y << ", " << world.radius << '\n';
-            map_cloud->push_back(pcl::PointXYZ(coords.x, coords.y, 0));
-        }
-
-        out_file.close();
-        // ROS_INFO_STREAM("Map Features saved in world coordinates to " << filename << '\n');
     }
+
+    std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/map_features.csv";
+
+    std::ofstream out_file(filename);
+    if (!out_file) {
+        std::cerr << "Failed to open file for writing.\n";
+        return;
+    }
+
+    out_file << std::fixed;
+
+    for (const auto& coords : mapFeatures) {
+        out_file << coords.x << ", " << coords.y << ", " << coords.radius << '\n';
+        map_cloud->push_back(pcl::PointXYZ(coords.x, coords.y, 0));
+        // ROS_INFO_STREAM("Added Point to Cloud: X=" << coords.x << " Y=" << coords.y);
+        // ROS_INFO_STREAM("MAP FEATURE SIZE: " << mapFeatures.size() << "\n");
+        // ROS_INFO_STREAM("MAP CLOUD SIZE: " << map_cloud->points.size() << "\n");
+    }
+
+    out_file.close();
+    // ROS_INFO_STREAM("Map Features saved in world coordinates to " << filename << '\n');
 }
 
 void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)

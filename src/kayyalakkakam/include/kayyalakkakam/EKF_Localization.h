@@ -70,24 +70,25 @@ class EKF_Localization
         nav_msgs::Odometry odomMessage;
         sensor_msgs::LaserScan laserscanMessage;
 
-        Eigen::VectorXd mu; // State vector: [x, y, theta, vx, vy, vtheta]
+        Eigen::VectorXd mu; // State vector: [x, y, theta]
         Eigen::MatrixXd Sigma; // Covariance matrix
         Eigen::MatrixXd g_function_jacobi;
 
         Eigen::VectorXd delta;
+        double q;
         Eigen::VectorXd z_hat;
+        Eigen::VectorXd z_polar;
+        Eigen::Vector3d z_difference;
         Eigen::MatrixXd h_function_jacobi;
-
         Eigen::MatrixXd KalmanGain;
 
+        Eigen::VectorXd Kalman_Sensor_Sum_for_Mu;
+        Eigen::MatrixXd Kalman_H_Matrix_Sigma_Sum_For_Sigma;
+
         Eigen::MatrixXd R; // Process Noise
+        float process_noise = 0.1;
         Eigen::MatrixXd Q; // Measurement Noise
         float sensor_noise = 0.1;
-
-        // ros::Publisher EKF_path_pub;    // EKF Path publisher 
-        // ros::Publisher Odometry_path_pub;    // EKF Path publisher 
-        // ros::Publisher marker_pub;  // Covariance Publisher
-        // ros::Publisher EKF_Pose_Publihser;
 
         std::vector<Circle> detectedCirclesInMap;
         std::vector<Circle> detectedCirclesInLidar;
@@ -99,5 +100,5 @@ class EKF_Localization
         laser_geometry::LaserProjection projector_;
         double resolution = 0.050000;
         WorldCoords origin = {-10.0, -10.0};
-        const int maxRansacFeatureSize = 50;
+        const int maxRansacFeatureSize = 9;
 };

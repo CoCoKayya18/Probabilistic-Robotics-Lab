@@ -5,7 +5,7 @@ Ros_Subscriber_Publisher_Class::Ros_Subscriber_Publisher_Class(ros::NodeHandle &
     EKF_path_pub = NH.advertise< nav_msgs::Path >("EKF_path", 10 );
     covariance_marker_pub = NH.advertise<visualization_msgs::Marker>("visualization_marker", 10);
     Odometry_path_pub = NH.advertise<nav_msgs::Path>("Odometry_path", 30, true);
-    EKF_Pose_Publisher = NH.advertise<nav_msgs::Path>("EKF_pose", 30, true);
+    EKF_Pose_Publisher = NH.advertise<geometry_msgs::PoseStamped>("EKF_pose", 30, true);
     Ransac_Features_Publisher = NH.advertise<visualization_msgs::MarkerArray>("ransac_features", 10);
     check_params(NH);
 }
