@@ -291,7 +291,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 0; 255; 255
-      Enabled: false
+      Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
@@ -310,7 +310,7 @@ Visualization Manager:
       Shaft Length: 0.10000000149011612
       Topic: /main_node/Odometry_path
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /featureExtractor/visualization_feature_marker
@@ -439,4 +439,4 @@ Window Geometry:
     collapsed: true
   Width: 1428
   X: -32
-  Y: 688
+  Y: -32

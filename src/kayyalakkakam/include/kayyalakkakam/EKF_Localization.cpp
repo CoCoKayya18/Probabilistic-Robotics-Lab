@@ -52,7 +52,8 @@ void EKF_Localization::publishEKFPose()
 
 /// Visualization Functions ///
 
-void EKF_Localization::publishEKFPath() {
+void EKF_Localization::publishEKFPath() 
+{
     static nav_msgs::Path path;
     path.header.stamp = ros::Time::now();
     path.header.frame_id = "map"; // Or whatever your fixed frame is
@@ -70,7 +71,8 @@ void EKF_Localization::publishEKFPath() {
 
 }
 
-void EKF_Localization::publishOdometryPath() {
+void EKF_Localization::publishOdometryPath() 
+{
     static nav_msgs::Path path;
     path.header.stamp = ros::Time::now();
     path.header.frame_id = "map"; // Or whatever your fixed frame is
@@ -87,7 +89,8 @@ void EKF_Localization::publishOdometryPath() {
     robot.publishOdometryPath(path);
 }
 
-void EKF_Localization::publishCovariance() {
+void EKF_Localization::publishCovariance() 
+{
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = ros::Time::now();
@@ -236,8 +239,13 @@ void EKF_Localization::h_Function(std::vector<int> Indices)
 
             z_polar << std::sqrt(std::pow(detectedFeature.center.x, 2) + std::pow(detectedFeature.center.y, 2)), std::atan2(detectedFeature.center.y, detectedFeature.center.x), 0;            
 
+            // ROS_INFO_STREAM("Delta before: [" << delta(0) << ", " << delta(1) << "]");
             delta(0) = mapFeature.x - mu(0);
             delta(1) = mapFeature.y - mu(1);
+            // ROS_INFO_STREAM("Map Feature: x=" << mapFeature.x << ", y=" << mapFeature.y << ", radius=" << mapFeature.radius);
+            // ROS_INFO_STREAM("MU: x=" << mu(0) << ", y=" << mu(1));
+            // ROS_INFO_STREAM("Delta after: [" << delta(0) << ", " << delta(1) << "]");
+
 
             q = delta.squaredNorm();
 
@@ -261,11 +269,16 @@ void EKF_Localization::h_Function(std::vector<int> Indices)
 
             // ROS_INFO_STREAM("Map Feature: x=" << mapFeature.x << ", y=" << mapFeature.y << ", radius=" << mapFeature.radius);
             // ROS_INFO_STREAM("Detected Feature: x=" << detectedFeature.center.x << ", y=" << detectedFeature.center.y << ", radius=" << detectedFeature.radius);
-            // ROS_INFO_STREAM("Delta: [" << delta(0) << ", " << delta(1) << "]");
-            // ROS_INFO_STREAM("q (squared norm of delta): " << q);
+            ROS_INFO_STREAM("Debug Information: \n");
+            ROS_INFO_STREAM("Delta: [" << delta(0) << ", " << delta(1) << "]");
+            ROS_INFO_STREAM("q (squared norm of delta): " << q);
             ROS_INFO_STREAM("z_hat: [" << z_hat(0) << ", " << z_hat(1) << ", " << z_hat(2) << "]");
-            // ROS_INFO_STREAM("Kalman Gain (K): \n" << KalmanGain);
-            // ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]");
+            ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]\n");
+            ROS_INFO_STREAM("Measurement Function Jacobian (H): \n" << h_function_jacobi << "\n");
+            ROS_INFO_STREAM("Kalman Gain (K): \n" << KalmanGain);
+            ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]");
+            ROS_INFO_STREAM("Kalman Gain weighted sum for mu update (Kalman_Sensor_Sum_for_Mu): \n" << Kalman_Sensor_Sum_for_Mu << "\n");
+            ROS_INFO_STREAM("Sigma update sum part (Kalman_H_Matrix_Sigma_Sum_For_Sigma): \n" << Kalman_H_Matrix_Sigma_Sum_For_Sigma << "\n");
 
 
         } 
@@ -284,8 +297,19 @@ void EKF_Localization::h_Function(std::vector<int> Indices)
     // ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]\n");
     // ROS_INFO_STREAM("Kalman Gain weighted sum for mu update (Kalman_Sensor_Sum_for_Mu): \n" << Kalman_Sensor_Sum_for_Mu << "\n");
     // ROS_INFO_STREAM("Sigma update sum part (Kalman_H_Matrix_Sigma_Sum_For_Sigma): \n" << Kalman_H_Matrix_Sigma_Sum_For_Sigma << "\n");
-    mu = mu + Kalman_Sensor_Sum_for_Mu;
-    Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma * Sigma; 
+
+    Eigen::VectorXd corrected_mu; 
+    Eigen::MatrixXd corrected_Sigma;
+
+    corrected_mu = Eigen::VectorXd(3);
+    corrected_mu = mu + Kalman_Sensor_Sum_for_Mu;
+    corrected_Sigma = Eigen::MatrixXd::Identity(3, 3);
+    corrected_Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma * Sigma;
+
+    ROS_INFO_STREAM("Corrected mu: " << corrected_mu);
+    ROS_INFO_STREAM("Corrected sigma: " << corrected_Sigma);
+    // mu = mu + Kalman_Sensor_Sum_for_Mu;
+    // Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma * Sigma; 
 }
 
 std::vector<int> EKF_Localization::landmarkMatching(const std::vector<Circle>& detectedFeatures)
@@ -317,9 +341,9 @@ void EKF_Localization::prediction_step()
     mu(2) = atan2(sin(mu(2)), cos(mu(2)));
     Sigma = updateSigma(mu, this->odomMessage);
 
-    // this->publishEKFPath();
-    // this->publishCovariance();
-    // this->publishEKFPose();
+    this->publishEKFPath();
+    this->publishCovariance();
+    this->publishEKFPose();
     this->publishOdometryPath();
 
     // this->printMuAndSigma();
@@ -329,6 +353,7 @@ void EKF_Localization::correction_step()
 {   
     ROS_INFO_STREAM("CORRECTION RUNNING");
     this->laserscanMessage = this->robot.getLaserscan();
+    // ROS_INFO_STREAM("LaserscanMessage: " << laserscanMessage);
 
     detectCircleInLidar(laserscanMessage);
 
@@ -339,9 +364,9 @@ void EKF_Localization::correction_step()
     // Process each matched feature
     h_Function(matchedIndices);
     publishRansacFeatures();
-    publishEKFPath();
-    publishCovariance();
-    publishEKFPose();
+    // publishEKFPath();
+    // publishCovariance();
+    // publishEKFPose();
     printMuAndSigma();
 };
 
