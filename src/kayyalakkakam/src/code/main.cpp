@@ -14,7 +14,7 @@ int main(int argc, char** argv){
     while (ros::ok()) {
         ros::spinOnce();
         loop_rate.sleep();
-        slamer.run_EKF_Filter();
+        // slamer.run_EKF_Filter();
     }
 
     ROS_INFO_STREAM("CLOSING EVERYTHING");                                                           

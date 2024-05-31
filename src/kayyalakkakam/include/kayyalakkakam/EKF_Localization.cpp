@@ -376,6 +376,10 @@ void EKF_Localization::detectCirclesInMap()
     cv::Mat treshImg;
     cv::Mat cannyImg;
     cv::Mat colorImage;
+    cv::Mat harrisImg;
+    cv::Mat harris_norm;
+    cv::Mat harris_norm_scaled;
+    cv::Mat greyContourImage;
 
     if (map_image.empty()) {
         std::cerr << "Failed to load image at path: " << map_path << std::endl;
@@ -432,10 +436,9 @@ void EKF_Localization::detectCirclesInMap()
         world.radius = detectedCirclesInMap[features].radius * resolution;
         mapFeatures.push_back(world);  
         // ROS_INFO_STREAM("Map Feature: x=" << mapFeatures[features].x << ", y=" << mapFeatures[features].y << ", radius=" << mapFeatures[features].radius);
-
     }
 
-    std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/map_features.csv";
+    std::string filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/map_ransac_features.csv";
 
     std::ofstream out_file(filename);
     if (!out_file) {
@@ -454,7 +457,66 @@ void EKF_Localization::detectCirclesInMap()
     }
 
     out_file.close();
-    // ROS_INFO_STREAM("Map Features saved in world coordinates to " << filename << '\n');
+
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(cannyImg, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    
+    cv::Mat contourImage = cv::Mat::zeros(cannyImg.size(), CV_8UC3); 
+    if (!contours.empty()) {
+        // Draw only the largest contour
+        auto largestContour = std::max_element(contours.begin(), contours.end(), [](const std::vector<cv::Point>& c1, const std::vector<cv::Point>& c2) {
+            return cv::contourArea(c1) < cv::contourArea(c2);
+        });
+        cv::drawContours(contourImage, std::vector<std::vector<cv::Point>>{*largestContour}, -1, cv::Scalar(0, 255, 0), 2);
+    }
+
+    // Save the resulting image with emphasized outer edge
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Contour_Picture.jpg", contourImage);
+
+    cv::cvtColor(contourImage, greyContourImage, CV_BGR2GRAY);
+
+    // Harris corner detection
+    cv::cornerHarris(greyContourImage, harrisImg, 2, 3, 0.04, cv::BORDER_DEFAULT);
+    cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
+    cv::convertScaleAbs(harris_norm, harris_norm_scaled);
+
+    int thresh = 140; // Threshold for corner detection
+    std::vector<cv::Point> corners;
+    // int cornerId = 0;
+    for (int i = 0; i < harris_norm.rows; i++) {
+        for (int j = 0; j < harris_norm.cols; j++) {
+            if ((int)harris_norm.at<float>(i, j) > thresh) {
+                corners.push_back(cv::Point(j, i));
+                cv::circle(colorImage, cv::Point(j, i), 1, cv::Scalar(0, 255, 0), -1);
+                // cv::putText(colorImage, std::to_string(++cornerId), cv::Point(j + 10, i + 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
+            }
+        }
+    }
+
+    // Save the resulting image
+    std::string outputImagePath = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Map_With_Corners_And_Circles.jpg";
+    if (!cv::imwrite(outputImagePath, colorImage)) {
+        std::cerr << "Failed to save the image to " << outputImagePath << std::endl;
+    } else {
+        std::cout << "Image saved to " << outputImagePath << std::endl;
+    }
+
+    filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/map_harris_features.csv";
+
+    std::ofstream out_file2(filename);
+    if (!out_file2) {
+        std::cerr << "Failed to open file for writing.\n";
+        return;
+    }
+
+    out_file2 << std::fixed;
+
+    for (const auto& corner : corners) {
+        ROS_INFO_STREAM("Corner x: " << corner.x << " y: " << corner.y << "\n");
+        out_file2 << corner.x << "," << corner.y << "\n";
+    }
+
+    out_file2.close();
 }
 
 void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
@@ -533,23 +595,14 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
         std::vector<Circle> filteredCircles;
         for (const auto& newCircle : newCircles) {
             if (newCircle.center.x > -1.2 && newCircle.center.x < 1.2 && newCircle.center.y > -1.2 && newCircle.center.y < 1.2) {
-                if (!detectedCirclesInLidar.empty()){
-                    // Check, wether feature already exists or not
-                    for (const auto& oldCircle : detectedCirclesInLidar) {
-                        float dx = oldCircle.center.x - newCircle.center.x;
-                        float dy = oldCircle.center.y - newCircle.center.y;
-                        float distance = std::sqrt(std::pow(dx,2) + std::pow(dy,2));
-                        if (distance > NewFeatureThreshold) 
-                        {
-                            ROS_INFO_STREAM("NEW CIRCLE ADDED");
-                            filteredCircles.push_back(newCircle);
-                        }
-                    }
-                } else {
-                    ROS_INFO_STREAM("Filtered out circle at x " << newCircle.center.x << " and y " << newCircle.center.y <<  "with radius" << newCircle.radius << "\n");
-                }
+                ROS_INFO_STREAM("NEW CIRCLE ADDED");
+                filteredCircles.push_back(newCircle);
+            }
+            else {
+                ROS_INFO_STREAM("Filtered out circle at x " << newCircle.center.x << " and y " << newCircle.center.y <<  "with radius" << newCircle.radius << "\n");
             }
         }
+
         newCircles = filteredCircles;
 
         // Keep the newest Features in the vector
