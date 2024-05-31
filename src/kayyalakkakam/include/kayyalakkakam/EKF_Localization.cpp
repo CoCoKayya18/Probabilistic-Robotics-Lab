@@ -233,19 +233,14 @@ void EKF_Localization::h_Function(std::vector<int> Indices)
 
         if (Indices[i] != -1) { 
 
-            // ROS_INFO_STREAM("Current Index: " << Indices[i] << "\n");
+            ROS_INFO_STREAM("Current Index: " << Indices[i] << "\n");
             auto detectedFeature = detectedCirclesInLidar[i];
             auto mapFeature = mapFeatures[Indices[i]];
 
             z_polar << std::sqrt(std::pow(detectedFeature.center.x, 2) + std::pow(detectedFeature.center.y, 2)), std::atan2(detectedFeature.center.y, detectedFeature.center.x), 0;            
 
-            // ROS_INFO_STREAM("Delta before: [" << delta(0) << ", " << delta(1) << "]");
             delta(0) = mapFeature.x - mu(0);
             delta(1) = mapFeature.y - mu(1);
-            // ROS_INFO_STREAM("Map Feature: x=" << mapFeature.x << ", y=" << mapFeature.y << ", radius=" << mapFeature.radius);
-            // ROS_INFO_STREAM("MU: x=" << mu(0) << ", y=" << mu(1));
-            // ROS_INFO_STREAM("Delta after: [" << delta(0) << ", " << delta(1) << "]");
-
 
             q = delta.squaredNorm();
 
@@ -267,18 +262,19 @@ void EKF_Localization::h_Function(std::vector<int> Indices)
             Kalman_Sensor_Sum_for_Mu = Kalman_Sensor_Sum_for_Mu + KalmanGain * z_difference;
             Kalman_H_Matrix_Sigma_Sum_For_Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma + (Eigen::MatrixXd::Identity(mu.size(), mu.size()) - KalmanGain * h_function_jacobi);
 
-            // ROS_INFO_STREAM("Map Feature: x=" << mapFeature.x << ", y=" << mapFeature.y << ", radius=" << mapFeature.radius);
-            // ROS_INFO_STREAM("Detected Feature: x=" << detectedFeature.center.x << ", y=" << detectedFeature.center.y << ", radius=" << detectedFeature.radius);
             ROS_INFO_STREAM("Debug Information: \n");
-            ROS_INFO_STREAM("Delta: [" << delta(0) << ", " << delta(1) << "]");
-            ROS_INFO_STREAM("q (squared norm of delta): " << q);
-            ROS_INFO_STREAM("z_hat: [" << z_hat(0) << ", " << z_hat(1) << ", " << z_hat(2) << "]");
-            ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]\n");
-            ROS_INFO_STREAM("Measurement Function Jacobian (H): \n" << h_function_jacobi << "\n");
-            ROS_INFO_STREAM("Kalman Gain (K): \n" << KalmanGain);
-            ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]");
-            ROS_INFO_STREAM("Kalman Gain weighted sum for mu update (Kalman_Sensor_Sum_for_Mu): \n" << Kalman_Sensor_Sum_for_Mu << "\n");
-            ROS_INFO_STREAM("Sigma update sum part (Kalman_H_Matrix_Sigma_Sum_For_Sigma): \n" << Kalman_H_Matrix_Sigma_Sum_For_Sigma << "\n");
+            ROS_INFO_STREAM("Map Feature: x=" << mapFeature.x << ", y=" << mapFeature.y << ", radius=" << mapFeature.radius);
+            ROS_INFO_STREAM("Detected Feature: x=" << detectedFeature.center.x << ", y=" << detectedFeature.center.y << ", radius=" << detectedFeature.radius);
+            // ROS_INFO_STREAM("Delta: [" << delta(0) << ", " << delta(1) << "]");
+            // ROS_INFO_STREAM("q (squared norm of delta): " << q);
+            // ROS_INFO_STREAM("z_hat: [" << z_hat(0) << ", " << z_hat(1) << ", " << z_hat(2) << "]");
+            // ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]\n");
+            // ROS_INFO_STREAM("Measurement Function Jacobian (H): \n" << h_function_jacobi << "\n");
+            // ROS_INFO_STREAM("S-Matrix: \n" << S << "\n");
+            // ROS_INFO_STREAM("Kalman Gain (K): \n" << KalmanGain);
+            // ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]");
+            // ROS_INFO_STREAM("Kalman Gain weighted sum for mu update (Kalman_Sensor_Sum_for_Mu): \n" << Kalman_Sensor_Sum_for_Mu << "\n");
+            // ROS_INFO_STREAM("Sigma update sum part (Kalman_H_Matrix_Sigma_Sum_For_Sigma): \n" << Kalman_H_Matrix_Sigma_Sum_For_Sigma << "\n");
 
 
         } 
@@ -297,19 +293,13 @@ void EKF_Localization::h_Function(std::vector<int> Indices)
     // ROS_INFO_STREAM("Measurement Residual (z_difference): [" << z_difference(0) << ", " << z_difference(1) << ", " << z_difference(2) << "]\n");
     // ROS_INFO_STREAM("Kalman Gain weighted sum for mu update (Kalman_Sensor_Sum_for_Mu): \n" << Kalman_Sensor_Sum_for_Mu << "\n");
     // ROS_INFO_STREAM("Sigma update sum part (Kalman_H_Matrix_Sigma_Sum_For_Sigma): \n" << Kalman_H_Matrix_Sigma_Sum_For_Sigma << "\n");
-
-    Eigen::VectorXd corrected_mu; 
-    Eigen::MatrixXd corrected_Sigma;
-
-    corrected_mu = Eigen::VectorXd(3);
-    corrected_mu = mu + Kalman_Sensor_Sum_for_Mu;
-    corrected_Sigma = Eigen::MatrixXd::Identity(3, 3);
-    corrected_Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma * Sigma;
-
-    ROS_INFO_STREAM("Corrected mu: " << corrected_mu);
-    ROS_INFO_STREAM("Corrected sigma: " << corrected_Sigma);
-    // mu = mu + Kalman_Sensor_Sum_for_Mu;
-    // Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma * Sigma; 
+    
+    // Reset the Sums
+    Kalman_Sensor_Sum_for_Mu = Eigen::VectorXd(3);
+    Kalman_H_Matrix_Sigma_Sum_For_Sigma = Eigen::MatrixXd::Identity(3, 3);
+     
+    mu = mu + Kalman_Sensor_Sum_for_Mu;
+    Sigma = Kalman_H_Matrix_Sigma_Sum_For_Sigma * Sigma; 
 }
 
 std::vector<int> EKF_Localization::landmarkMatching(const std::vector<Circle>& detectedFeatures)
@@ -541,11 +531,23 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
 
         // Filter the Features, which are not in range of the real features
         std::vector<Circle> filteredCircles;
-        for (const auto& circle : newCircles) {
-            if (circle.center.x > -1.2 && circle.center.x < 1.2 && circle.center.y > -1.2 && circle.center.y < 1.2) {
-                filteredCircles.push_back(circle);
-            } else {
-                // ROS_INFO_STREAM("Filtered out circle at x " << circle.center.x << " and y " << circle.center.y <<  "with radius" << circle.radius << "\n");
+        for (const auto& newCircle : newCircles) {
+            if (newCircle.center.x > -1.2 && newCircle.center.x < 1.2 && newCircle.center.y > -1.2 && newCircle.center.y < 1.2) {
+                if (!detectedCirclesInLidar.empty()){
+                    // Check, wether feature already exists or not
+                    for (const auto& oldCircle : detectedCirclesInLidar) {
+                        float dx = oldCircle.center.x - newCircle.center.x;
+                        float dy = oldCircle.center.y - newCircle.center.y;
+                        float distance = std::sqrt(std::pow(dx,2) + std::pow(dy,2));
+                        if (distance > NewFeatureThreshold) 
+                        {
+                            ROS_INFO_STREAM("NEW CIRCLE ADDED");
+                            filteredCircles.push_back(newCircle);
+                        }
+                    }
+                } else {
+                    ROS_INFO_STREAM("Filtered out circle at x " << newCircle.center.x << " and y " << newCircle.center.y <<  "with radius" << newCircle.radius << "\n");
+                }
             }
         }
         newCircles = filteredCircles;

@@ -101,4 +101,5 @@ class EKF_Localization
         double resolution = 0.050000;
         WorldCoords origin = {-10.0, -10.0};
         const int maxRansacFeatureSize = 9;
+        const float NewFeatureThreshold = 0.5;
 };

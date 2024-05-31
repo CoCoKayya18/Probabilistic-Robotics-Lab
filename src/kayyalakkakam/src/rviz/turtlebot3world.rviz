@@ -7,7 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /DepthCloud1/Auto Size1
-        - /EKF_Path1
+        - /Covariance1/Status1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 588
   - Class: rviz/Selection
@@ -256,13 +256,13 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /main_node/visualization_marker
-      Name: Marker
+      Name: Covariance
       Namespaces:
-        {}
+        EKF: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -415,7 +415,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 115.21791076660156
+      Scale: 23.875686645507812
       Target Frame: <Fixed Frame>
       X: 0.593521773815155
       Y: -0.040479183197021484
