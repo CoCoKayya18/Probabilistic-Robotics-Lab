@@ -380,6 +380,8 @@ void EKF_Localization::detectCirclesInMap()
     cv::Mat harris_norm;
     cv::Mat harris_norm_scaled;
     cv::Mat greyContourImage;
+    cv::Mat sharpened_image;
+    Mat eroded_image;
 
     if (map_image.empty()) {
         std::cerr << "Failed to load image at path: " << map_path << std::endl;
@@ -473,33 +475,90 @@ void EKF_Localization::detectCirclesInMap()
     // Save the resulting image with emphasized outer edge
     cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Contour_Picture.jpg", contourImage);
 
+    // Sharpen the Image
+    cv::Mat kernel = (cv::Mat_<float>(3, 3) << 0, -1, 0, 
+                                        -1, 5, -1, 
+                                        0, -1, 0);
+    
+    cv::filter2D(gaussianImg, sharpened_image, -1, kernel);
+
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Sharpened_Picture.jpg", sharpened_image);
+
+    Mat element = getStructuringElement(MORPH_RECT, Size(3, 3));
+    erode(sharpened_image, eroded_image, element);
+
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Sharpened_Picture.jpg", eroded_image);
+
     cv::cvtColor(contourImage, greyContourImage, CV_BGR2GRAY);
 
-    // Harris corner detection
-    cv::cornerHarris(greyContourImage, harrisImg, 2, 3, 0.04, cv::BORDER_DEFAULT);
-    cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
-    cv::convertScaleAbs(harris_norm, harris_norm_scaled);
+    std::vector<int> blockSizes = {2, 3, 4};
+    std::vector<int> apertureSizes = {3, 5, 7};
+    std::vector<double> ks = {0.04, 0.06, 0.08};
 
     int thresh = 140; // Threshold for corner detection
     std::vector<cv::Point> corners;
-    // int cornerId = 0;
-    for (int i = 0; i < harris_norm.rows; i++) {
-        for (int j = 0; j < harris_norm.cols; j++) {
-            if ((int)harris_norm.at<float>(i, j) > thresh) {
-                corners.push_back(cv::Point(j, i));
-                cv::circle(colorImage, cv::Point(j, i), 1, cv::Scalar(0, 255, 0), -1);
-                // cv::putText(colorImage, std::to_string(++cornerId), cv::Point(j + 10, i + 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
+
+    // Harris corner detection
+
+    int id = 0;
+    for (int blockSize : blockSizes) {
+        for (int apertureSize : apertureSizes) {
+            for (double k : ks) {
+                cv::Mat harrisImg, harris_norm, harris_norm_scaled;
+                
+                // Harris corner detection
+                cv::cornerHarris(greyContourImage, harrisImg, blockSize, apertureSize, k, cv::BORDER_DEFAULT);
+                cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
+                cv::convertScaleAbs(harris_norm, harris_norm_scaled);
+
+                std::vector<cv::Point> corners;
+                cv::Mat colorImageCopy = colorImage.clone();
+                for (int i = 0; i < harris_norm.rows; i++) {
+                    for (int j = 0; j < harris_norm.cols; j++) {
+                        if ((int)harris_norm.at<float>(i, j) > thresh) {
+                            corners.push_back(cv::Point(j, i));
+                            cv::circle(colorImageCopy, cv::Point(j, i), 1, cv::Scalar(0, 255, 0), -1);
+                        }
+                    }
+                }
+
+                std::string outputDir = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/JustCorners";
+                // Save the resulting image
+                std::string outputImagePath = outputDir + "/Map_With_Corners_And_Circles_" + std::to_string(id) + ".jpg";
+                if (!cv::imwrite(outputImagePath, colorImageCopy)) {
+                    std::cerr << "Failed to save the image to " << outputImagePath << " at iteration" << id << std::endl;
+                } else {
+                    std::cout << "Image saved to " << outputImagePath << std::endl;
+                }
+                id++;
             }
         }
     }
 
+    // cv::cornerHarris(greyContourImage, harrisImg, 2, 3, 0.04, cv::BORDER_DEFAULT);
+    // cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
+    // cv::convertScaleAbs(harris_norm, harris_norm_scaled);
+
+    // int thresh = 140; // Threshold for corner detection
+    // std::vector<cv::Point> corners;
+    // // int cornerId = 0;
+    // for (int i = 0; i < harris_norm.rows; i++) {
+    //     for (int j = 0; j < harris_norm.cols; j++) {
+    //         if ((int)harris_norm.at<float>(i, j) > thresh) {
+    //             corners.push_back(cv::Point(j, i));
+    //             cv::circle(colorImage, cv::Point(j, i), 1, cv::Scalar(0, 255, 0), -1);
+    //             // cv::putText(colorImage, std::to_string(++cornerId), cv::Point(j + 10, i + 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
+    //         }
+    //     }
+    // }
+
     // Save the resulting image
-    std::string outputImagePath = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Map_With_Corners_And_Circles.jpg";
-    if (!cv::imwrite(outputImagePath, colorImage)) {
-        std::cerr << "Failed to save the image to " << outputImagePath << std::endl;
-    } else {
-        std::cout << "Image saved to " << outputImagePath << std::endl;
-    }
+    // std::string outputImagePath = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Map_With_Corners_And_Circles.jpg";
+    // if (!cv::imwrite(outputImagePath, colorImage)) {
+    //     std::cerr << "Failed to save the image to " << outputImagePath << std::endl;
+    // } else {
+    //     std::cout << "Image saved to " << outputImagePath << std::endl;
+    // }
 
     filename = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/features/map_harris_features.csv";
 
