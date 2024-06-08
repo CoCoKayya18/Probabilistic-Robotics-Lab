@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /DepthCloud1/Auto Size1
-        - /Covariance1/Status1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 588
   - Class: rviz/Selection
@@ -27,7 +26,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -168,6 +167,7 @@ Visualization Manager:
       Value: false
       Visibility:
         Axes: true
+        Covariance: true
         DepthCloud: true
         EKF_Path: true
         EKF_Pose: true
@@ -175,7 +175,6 @@ Visualization Manager:
         Grid: true
         LaserScan: true
         Map: true
-        Marker: true
         Odometry: true
         Odometry_Path: true
         PoseArray: true
@@ -260,7 +259,7 @@ Visualization Manager:
       Marker Topic: /main_node/visualization_marker
       Name: Covariance
       Namespaces:
-        EKF: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -351,7 +350,7 @@ Visualization Manager:
       Marker Topic: /main_node/ransac_features
       Name: RansacFeatures
       Namespaces:
-        circles: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -439,4 +438,4 @@ Window Geometry:
     collapsed: true
   Width: 1428
   X: -32
-  Y: -32
+  Y: 688

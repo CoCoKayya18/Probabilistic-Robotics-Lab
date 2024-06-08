@@ -379,7 +379,7 @@ void EKF_Localization::detectCirclesInMap()
     cv::Mat harrisImg;
     cv::Mat harris_norm;
     cv::Mat harris_norm_scaled;
-    cv::Mat greyContourImage;
+    cv::Mat greyErodedContourImage;
     cv::Mat sharpened_image;
     cv::Mat eroded_image;
 
@@ -453,9 +453,6 @@ void EKF_Localization::detectCirclesInMap()
     for (const auto& coords : mapFeatures) {
         out_file << coords.x << ", " << coords.y << ", " << coords.radius << '\n';
         map_cloud->push_back(pcl::PointXYZ(coords.x, coords.y, 0));
-        // ROS_INFO_STREAM("Added Point to Cloud: X=" << coords.x << " Y=" << coords.y);
-        // ROS_INFO_STREAM("MAP FEATURE SIZE: " << mapFeatures.size() << "\n");
-        // ROS_INFO_STREAM("MAP CLOUD SIZE: " << map_cloud->points.size() << "\n");
     }
 
     out_file.close();
@@ -475,35 +472,32 @@ void EKF_Localization::detectCirclesInMap()
     // Save the resulting image with emphasized outer edge
     cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Contour_Picture.jpg", contourImage);
 
-    // Sharpen the Image
-    // cv::Mat kernel = (cv::Mat_<float>(3, 3) << 0, -1, 0, 
-    //                                     -1, 5, -1, 
-    //                                     0, -1, 0);
-    
-    // cv::filter2D(gaussianImg, sharpened_image, -1, kernel);
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::erode(map_image, eroded_image, element);
 
-    // cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Sharpened_Picture.jpg", sharpened_image);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Erored_Picture.jpg", eroded_image);
 
-    // cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4, 4));
-    // cv::erode(sharpened_image, eroded_image, element);
+    cv::cvtColor(eroded_image, greyErodedContourImage, CV_BGR2GRAY);
+    greyErodedContourImage.convertTo(greyErodedContourImage, CV_32FC1);
 
-    // cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Erored_Picture.jpg", eroded_image);
+    int thresh = 67; // Threshold for corner detection
+    int blockSize = 2; // Size of neighborhood considered for corner detection
+    int apertureSize = 11; // Aperture parameter for the Sobel operator
+    double k = 0.0; // Harris detector free parameter
 
-    cv::cvtColor(contourImage, greyContourImage, CV_BGR2GRAY);
-
-    cv::cornerHarris(map_image, harrisImg, 2, 3, 0.04, cv::BORDER_DEFAULT);
-    cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
+    cv::cornerHarris(greyErodedContourImage, harrisImg, blockSize, apertureSize, k);
+    cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1);
     cv::convertScaleAbs(harris_norm, harris_norm_scaled);
 
-    int thresh = 205; // Threshold for corner detection
-    std::vector<cv::Point> corners;
-    int cornerId = 0;
+    std::vector<std::pair<int, cv::Point>> corners;
+    int cornerId = 1;
     for (int i = 0; i < harris_norm.rows; i++) {
         for (int j = 0; j < harris_norm.cols; j++) {
             if ((int)harris_norm.at<float>(i, j) > thresh) {
-                corners.push_back(cv::Point(j, i));
+                corners.push_back(std::make_pair(cornerId, cv::Point(j, i)));
                 cv::circle(colorImage, cv::Point(j, i), 1, cv::Scalar(0, 255, 0), -1);
-                cv::putText(colorImage, std::to_string(++cornerId), cv::Point(j + 10, i + 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
+                // cv::putText(colorImage, std::to_string(cornerId), cv::Point(j + 10, i + 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
+                cornerId += 1;
             }
         }
     }
@@ -527,8 +521,8 @@ void EKF_Localization::detectCirclesInMap()
     out_file2 << std::fixed;
 
     for (const auto& corner : corners) {
-        ROS_INFO_STREAM("Corner x: " << corner.x << " y: " << corner.y << "\n");
-        out_file2 << corner.x << "," << corner.y << "\n";
+        ROS_INFO_STREAM("Corner x: " << corner.second.x << " y: " << corner.second.y << "\n");
+        out_file2 << corner.first << "," << corner.second.x << "," << corner.second.y << "\n";
     }
 
     out_file2.close();
