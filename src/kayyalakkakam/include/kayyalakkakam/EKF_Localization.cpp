@@ -473,17 +473,17 @@ void EKF_Localization::detectCirclesInMap()
     cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Contour_Picture.jpg", contourImage);
 
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-    cv::erode(map_image, eroded_image, element);
+    cv::erode(contourImage, eroded_image, element);
 
     cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Erored_Picture.jpg", eroded_image);
 
     cv::cvtColor(eroded_image, greyErodedContourImage, CV_BGR2GRAY);
     greyErodedContourImage.convertTo(greyErodedContourImage, CV_32FC1);
 
-    int thresh = 67; // Threshold for corner detection
+    int thresh = 117; // Threshold for corner detection
     int blockSize = 2; // Size of neighborhood considered for corner detection
-    int apertureSize = 11; // Aperture parameter for the Sobel operator
-    double k = 0.0; // Harris detector free parameter
+    int apertureSize = 3; // Aperture parameter for the Sobel operator
+    double k = 0.04; // Harris detector free parameter
 
     cv::cornerHarris(greyErodedContourImage, harrisImg, blockSize, apertureSize, k);
     cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1);
@@ -494,10 +494,13 @@ void EKF_Localization::detectCirclesInMap()
     for (int i = 0; i < harris_norm.rows; i++) {
         for (int j = 0; j < harris_norm.cols; j++) {
             if ((int)harris_norm.at<float>(i, j) > thresh) {
-                corners.push_back(std::make_pair(cornerId, cv::Point(j, i)));
+                float worldX = (j * resolution) + origin.x;
+                float worldY = origin.y - (i * resolution); // Notice the subtraction due to coordinate system differences
+
+                corners.push_back(std::make_pair(cornerId, cv::Point2f(worldX, worldY)));
                 cv::circle(colorImage, cv::Point(j, i), 1, cv::Scalar(0, 255, 0), -1);
-                // cv::putText(colorImage, std::to_string(cornerId), cv::Point(j + 10, i + 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
-                cornerId += 1;
+                cv::putText(colorImage, std::to_string(cornerId), cv::Point(j + 10, i + 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
+                cornerId++;
             }
         }
     }
@@ -520,8 +523,18 @@ void EKF_Localization::detectCirclesInMap()
 
     out_file2 << std::fixed;
 
+    int x_threshold = 180; // Set according to your specific needs
+    int y_threshold = 200; // Set according to your specific needs
+
     for (const auto& corner : corners) {
-        ROS_INFO_STREAM("Corner x: " << corner.second.x << " y: " << corner.second.y << "\n");
+        // Check if the corner's x or y exceeds the threshold
+        if (corner.second.x > x_threshold || corner.second.y > y_threshold) {
+            ROS_INFO_STREAM("Excluded Corner: ID=" << corner.first << " x=" << corner.second.x << " y=" << corner.second.y);
+            continue; // Skip the current iteration, effectively excluding this corner
+        }
+
+        // Log and write corners that pass the threshold check
+        ROS_INFO_STREAM("Corner x: " << corner.second.x << " y: " << corner.second.y);
         out_file2 << corner.first << "," << corner.second.x << "," << corner.second.y << "\n";
     }
 
@@ -639,5 +652,59 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
         }
     }
 }
+
+void EKF_Localization::detectCornersInLidar(sensor_msgs::LaserScan input)
+{
+    sensor_msgs::PointCloud2 cloud2;
+
+    // Convert LiDAR to point cloud and into the map frame
+    if (!transformer.waitForTransform("map", "base_scan", input.header.stamp, ros::Duration(0.5))) {
+        ROS_WARN("Waiting for the transform timed-out.");
+        return;
+    }
+
+    try {
+        projector_.transformLaserScanToPointCloud("map", input, cloud2, transformer);
+    } catch (tf::TransformException &ex) {
+        ROS_WARN("TF exception:\n%s", ex.what());
+        return;
+    }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromROSMsg(cloud2, *cloud);
+
+    // Check if the cloud is empty
+    if (cloud->points.empty()) {
+        ROS_WARN("Received an empty point cloud.");
+        return;
+    }
+
+    // Prepare for corner detection using normals and region growing
+    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+    ne.setInputCloud(cloud);
+    ne.setSearchMethod(pcl::search::Search<pcl::PointXYZ>::Ptr(new pcl::search::KdTree<pcl::PointXYZ>()));
+    ne.setKSearch(50);
+    ne.compute(*normals);
+
+    pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
+    reg.setMinClusterSize(50);
+    reg.setMaxClusterSize(10000);
+    reg.setSearchMethod(pcl::search::Search<pcl::PointXYZ>::Ptr(new pcl::search::KdTree<pcl::PointXYZ>()));
+    reg.setNumberOfNeighbours(30);
+    reg.setInputCloud(cloud);
+    reg.setInputNormals(normals);
+    // Set thresholds for region growing
+    reg.setSmoothnessThreshold(3.0 / 180.0 * M_PI);  // 3 degrees
+    reg.setCurvatureThreshold(1.0);
+
+    std::vector <pcl::PointIndices> clusters;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud();
+    reg.extract(clusters);
+
+    // Logging detected corners
+    ROS_INFO("Detected %ld clusters", clusters.size());
+}
+
 
 /// Feature Extraction ///

@@ -16,6 +16,14 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/features/integral_image_normal.h> 
+#include <pcl/features/normal_3d.h> 
+#include <pcl/features/boundary.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/segmentation/region_growing.h>
+#include <pcl/visualization/pcl_visualizer.h>
 #include "robot_class.h"
 
 struct Circle {
@@ -58,6 +66,7 @@ class EKF_Localization
         /// Feature Extraction ///
         void detectCirclesInMap();
         void detectCircleInLidar(sensor_msgs::LaserScan input);
+        void detectCornersInLidar(sensor_msgs::LaserScan input);
         /// Feature Extraction ///
 
         /// EKF Pose Publisher /// 
