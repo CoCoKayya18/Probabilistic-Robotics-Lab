@@ -21,7 +21,8 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
     Kalman_Sensor_Sum_for_Mu = Eigen::VectorXd(3);
     Kalman_H_Matrix_Sigma_Sum_For_Sigma = Eigen::MatrixXd::Identity(3, 3); 
     map_cloud.reset(new pcl::PointCloud<pcl::PointXYZ>());                          // Initialize Space for map feature point cloud
-    detectCirclesInMap();                                                           // Extract Features from Map
+    // detectCirclesInMap();                                                           // Extract Circle Features from Map
+    detectCornersInMap();
 };
 
 /// EKF Pose Publisher ///
@@ -345,14 +346,15 @@ void EKF_Localization::correction_step()
     this->laserscanMessage = this->robot.getLaserscan();
     // ROS_INFO_STREAM("LaserscanMessage: " << laserscanMessage);
 
-    detectCircleInLidar(laserscanMessage);
+    // detectCircleInLidar(laserscanMessage);
+    detectCornersInLidar(laserscanMessage);
 
     // ROS_INFO("Detected %lu circles in LIDAR data.", detectedCirclesInLidar.size());
 
-    std::vector<int> matchedIndices = landmarkMatching(detectedCirclesInLidar);
+    // std::vector<int> matchedIndices = landmarkMatching(detectedCirclesInLidar);
 
     // Process each matched feature
-    h_Function(matchedIndices);
+    // h_Function(matchedIndices);
     publishRansacFeatures();
     // publishEKFPath();
     // publishCovariance();
@@ -390,17 +392,17 @@ void EKF_Localization::detectCirclesInMap()
 
     cv::cvtColor(map_image, colorImage, cv::COLOR_GRAY2BGR);
 
-    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Normal_Picture.jpg", map_image);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Normal_Picture.jpg", map_image);
 
 
     cv::GaussianBlur(map_image, gaussianImg, cv::Size(9,9), 3, 3);
-    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Gaussian_Picture.jpg", gaussianImg);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Gaussian_Picture.jpg", gaussianImg);
 
     cv::threshold(gaussianImg, treshImg,0,255,cv::THRESH_BINARY+cv::THRESH_OTSU);
-    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Treshholded_Picture.jpg", treshImg);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Treshholded_Picture.jpg", treshImg);
 
     cv::Canny(treshImg, cannyImg, 50, 150);
-    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Canny_Picture.jpg", cannyImg);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Canny_Picture.jpg", cannyImg);
 
     std::vector<cv::Vec3f> circles;
     cv::HoughCircles(cannyImg, circles, cv::HOUGH_GRADIENT, 1, cannyImg.rows/32, 100, 12, 1, 7);  
@@ -420,7 +422,7 @@ void EKF_Localization::detectCirclesInMap()
         detectedCirclesInMap.push_back(detectedCircle);
     }
 
-    imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Map_With_Circles.jpg", colorImage);
+    imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Map_With_Circles.jpg", colorImage);
 
     float sumX = 0, sumY = 0;
     for (const auto& circle : detectedCirclesInMap) {
@@ -456,6 +458,42 @@ void EKF_Localization::detectCirclesInMap()
     }
 
     out_file.close();
+}
+
+void EKF_Localization::detectCornersInMap()
+{
+    std::string map_path = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/turtlebot3_world_map.pgm";
+    cv::Mat map_image = cv::imread(map_path, cv::COLOR_BGR2GRAY);
+    cv::Mat gaussianImg;
+    cv::Mat treshImg;
+    cv::Mat cannyImg;
+    cv::Mat colorImage;
+    cv::Mat harrisImg;
+    cv::Mat harris_norm;
+    cv::Mat harris_norm_scaled;
+    cv::Mat greyErodedContourImage;
+    cv::Mat sharpened_image;
+    cv::Mat eroded_image;
+    std::string filename;
+
+    if (map_image.empty()) {
+        std::cerr << "Failed to load image at path: " << map_path << std::endl;
+        return;
+    }
+
+    cv::cvtColor(map_image, colorImage, cv::COLOR_GRAY2BGR);
+
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Normal_Picture.jpg", map_image);
+
+
+    cv::GaussianBlur(map_image, gaussianImg, cv::Size(9,9), 3, 3);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Gaussian_Picture.jpg", gaussianImg);
+
+    cv::threshold(gaussianImg, treshImg,0,255,cv::THRESH_BINARY+cv::THRESH_OTSU);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Treshholded_Picture.jpg", treshImg);
+
+    cv::Canny(treshImg, cannyImg, 50, 150);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Canny_Picture.jpg", cannyImg);
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(cannyImg, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -470,12 +508,12 @@ void EKF_Localization::detectCirclesInMap()
     }
 
     // Save the resulting image with emphasized outer edge
-    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Contour_Picture.jpg", contourImage);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Contour_Picture.jpg", contourImage);
 
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
     cv::erode(contourImage, eroded_image, element);
 
-    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Erored_Picture.jpg", eroded_image);
+    cv::imwrite("/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Erored_Picture.jpg", eroded_image);
 
     cv::cvtColor(eroded_image, greyErodedContourImage, CV_BGR2GRAY);
     greyErodedContourImage.convertTo(greyErodedContourImage, CV_32FC1);
@@ -487,15 +525,23 @@ void EKF_Localization::detectCirclesInMap()
 
     cv::cornerHarris(greyErodedContourImage, harrisImg, blockSize, apertureSize, k);
     cv::normalize(harrisImg, harris_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1);
-    cv::convertScaleAbs(harris_norm, harris_norm_scaled);
+    cv::convertScaleAbs(harris_norm, harris_norm_scaled);   
 
     std::vector<std::pair<int, cv::Point>> corners;
     int cornerId = 1;
+
+    int imgCenterX = harris_norm.cols / 2;
+    int imgCenterY = harris_norm.rows / 2;
+
     for (int i = 0; i < harris_norm.rows; i++) {
         for (int j = 0; j < harris_norm.cols; j++) {
             if ((int)harris_norm.at<float>(i, j) > thresh) {
-                float worldX = (j * resolution) + origin.x;
-                float worldY = origin.y - (i * resolution); // Notice the subtraction due to coordinate system differences
+                // float worldX = (j - centerX) * resolution;
+                // float worldY = (centerY - i) * resolution;
+                float worldX = (j - imgCenterX) * resolution;
+                float worldY = (imgCenterY - i) * resolution;
+
+                // ROS_INFO_STREAM("Corner " << cornerId << ": Image (" << i << ", " << j << "), World (" << worldX << ", " << worldY << ")");
 
                 corners.push_back(std::make_pair(cornerId, cv::Point2f(worldX, worldY)));
                 cv::circle(colorImage, cv::Point(j, i), 1, cv::Scalar(0, 255, 0), -1);
@@ -506,7 +552,7 @@ void EKF_Localization::detectCirclesInMap()
     }
 
     // Save the resulting image
-    std::string outputImagePath = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Map_With_Corners_And_Circles.jpg";
+    std::string outputImagePath = "/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/map/Altered_MapImages/Map_With_Corners.jpg";
     if (!cv::imwrite(outputImagePath, colorImage)) {
         std::cerr << "Failed to save the image to " << outputImagePath << std::endl;
     } else {
@@ -523,14 +569,15 @@ void EKF_Localization::detectCirclesInMap()
 
     out_file2 << std::fixed;
 
-    int x_threshold = 180; // Set according to your specific needs
-    int y_threshold = 200; // Set according to your specific needs
+    int x_threshold = 0; 
+    int y_threshold = 0; 
 
     for (const auto& corner : corners) {
         // Check if the corner's x or y exceeds the threshold
-        if (corner.second.x > x_threshold || corner.second.y > y_threshold) {
+        // ROS_INFO_STREAM("Corner: ID=" << corner.first << " x=" << corner.second.x << " y=" << corner.second.y);
+        if (corner.second.x > x_threshold || corner.second.y != y_threshold) {
             ROS_INFO_STREAM("Excluded Corner: ID=" << corner.first << " x=" << corner.second.x << " y=" << corner.second.y);
-            continue; // Skip the current iteration, effectively excluding this corner
+            continue; 
         }
 
         // Log and write corners that pass the threshold check
@@ -656,6 +703,8 @@ void EKF_Localization::detectCircleInLidar(sensor_msgs::LaserScan input)
 void EKF_Localization::detectCornersInLidar(sensor_msgs::LaserScan input)
 {
     sensor_msgs::PointCloud2 cloud2;
+
+    ROS_INFO_STREAM("Searching for corners");
 
     // Convert LiDAR to point cloud and into the map frame
     if (!transformer.waitForTransform("map", "base_scan", input.header.stamp, ros::Duration(0.5))) {

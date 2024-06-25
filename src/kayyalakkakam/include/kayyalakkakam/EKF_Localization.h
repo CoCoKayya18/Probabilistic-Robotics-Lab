@@ -65,6 +65,7 @@ class EKF_Localization
 
         /// Feature Extraction ///
         void detectCirclesInMap();
+        void detectCornersInMap();
         void detectCircleInLidar(sensor_msgs::LaserScan input);
         void detectCornersInLidar(sensor_msgs::LaserScan input);
         /// Feature Extraction ///
