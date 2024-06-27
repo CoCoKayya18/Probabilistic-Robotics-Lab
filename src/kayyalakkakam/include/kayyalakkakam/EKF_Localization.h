@@ -37,6 +37,12 @@ struct WorldCoords {
     double radius;
 };
 
+struct point
+{
+    double x;
+    double y;
+};
+
 class EKF_Localization
 {
     public:
@@ -54,7 +60,7 @@ class EKF_Localization
         void printMuAndSigma();
 
         void h_Function(std::vector<int> Indices);
-        std::vector<int> landmarkMatching(const std::vector<Circle>& detectedFeatures);
+        std::vector<int> landmarkMatching(const std::vector<point>& detectedFeatures);
 
         /// Visualization Functions ///
         void publishEKFPath();
@@ -68,6 +74,7 @@ class EKF_Localization
         void detectCornersInMap();
         void detectCircleInLidar(sensor_msgs::LaserScan input);
         void detectCornersInLidar(sensor_msgs::LaserScan input);
+        std::vector<point> detectCorners(const std::vector<point>& points);
         /// Feature Extraction ///
 
         /// EKF Pose Publisher /// 
@@ -102,10 +109,13 @@ class EKF_Localization
 
         std::vector<Circle> detectedCirclesInMap;
         std::vector<Circle> detectedCirclesInLidar;
-        std::vector<WorldCoords> mapFeatures;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud;
+        std::vector<point> cornersInLidar;
+        // std::vector<point> cornersInMap;
+        std::vector<WorldCoords> mapCircleFeatures;
+        std::vector<point> mapCornerFeatures;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr map_Circle_Cloud;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr map_Corner_Cloud;
         pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
-        // std::vector<pcl::ModelCoefficients> lidarFeatures;
         tf::TransformListener transformer;
         laser_geometry::LaserProjection projector_;
         double resolution = 0.050000;
