@@ -66,13 +66,14 @@ class EKF_Localization
         void publishEKFPath();
         void publishCovariance();
         void publishOdometryPath();
-        void publishRansacFeatures();
+        // void publishRansacFeatures();
+        void publishCornerFeatures();
         /// Visualization Functions ///
 
         /// Feature Extraction ///
-        void detectCirclesInMap();
+        // void detectCirclesInMap();
+        // void detectCircleInLidar(sensor_msgs::LaserScan input);
         void detectCornersInMap();
-        void detectCircleInLidar(sensor_msgs::LaserScan input);
         void detectCornersInLidar(sensor_msgs::LaserScan input);
         std::vector<point> detectCorners(const std::vector<point>& points);
         /// Feature Extraction ///
@@ -103,23 +104,22 @@ class EKF_Localization
         Eigen::MatrixXd Kalman_H_Matrix_Sigma_Sum_For_Sigma;
 
         Eigen::MatrixXd R; // Process Noise
-        float process_noise = 0.1;
+        float process_noise = 0.01;
         Eigen::MatrixXd Q; // Measurement Noise
-        float sensor_noise = 0.1;
+        float sensor_noise = 0.01;
 
-        std::vector<Circle> detectedCirclesInMap;
-        std::vector<Circle> detectedCirclesInLidar;
+        // std::vector<Circle> detectedCirclesInMap;
+        // std::vector<Circle> detectedCirclesInLidar;
+        // std::vector<WorldCoords> mapCircleFeatures;
         std::vector<point> cornersInLidar;
-        // std::vector<point> cornersInMap;
-        std::vector<WorldCoords> mapCircleFeatures;
         std::vector<point> mapCornerFeatures;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr map_Circle_Cloud;
+        // pcl::PointCloud<pcl::PointXYZ>::Ptr map_Circle_Cloud;
         pcl::PointCloud<pcl::PointXYZ>::Ptr map_Corner_Cloud;
         pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
         tf::TransformListener transformer;
         laser_geometry::LaserProjection projector_;
         double resolution = 0.050000;
         WorldCoords origin = {-10.0, -10.0};
-        const int maxRansacFeatureSize = 9;
-        const float NewFeatureThreshold = 0.5;
+        // const int maxRansacFeatureSize = 9;
+        // const float NewFeatureThreshold = 0.5;
 };

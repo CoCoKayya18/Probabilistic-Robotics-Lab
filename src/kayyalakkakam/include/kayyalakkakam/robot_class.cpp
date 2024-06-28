@@ -7,6 +7,7 @@ Ros_Subscriber_Publisher_Class::Ros_Subscriber_Publisher_Class(ros::NodeHandle &
     Odometry_path_pub = NH.advertise<nav_msgs::Path>("Odometry_path", 30, true);
     EKF_Pose_Publisher = NH.advertise<geometry_msgs::PoseStamped>("EKF_pose", 30, true);
     Ransac_Features_Publisher = NH.advertise<visualization_msgs::MarkerArray>("ransac_features", 10);
+    Corner_Features_Publisher = NH.advertise<visualization_msgs::Marker>("corner_features", 10);
     check_params(NH);
 }
 
@@ -74,13 +75,17 @@ void Ros_Subscriber_Publisher_Class::publishOdometryPath(nav_msgs::Path odometry
 }
 
 
-
 void Ros_Subscriber_Publisher_Class::publishEKFPose(geometry_msgs::PoseStamped ekf_pose)
 {
     EKF_Pose_Publisher.publish(ekf_pose);
 }
 
-void Ros_Subscriber_Publisher_Class::publishRansacFeatures(visualization_msgs::MarkerArray markerArray)
+// void Ros_Subscriber_Publisher_Class::publishRansacFeatures(visualization_msgs::MarkerArray markerArray)
+// {
+//     Ransac_Features_Publisher.publish(markerArray);
+// }
+
+void Ros_Subscriber_Publisher_Class::publishCornerFeatures(visualization_msgs::Marker cornerMarkers)
 {
-    Ransac_Features_Publisher.publish(markerArray);
+    Corner_Features_Publisher.publish(cornerMarkers);
 }

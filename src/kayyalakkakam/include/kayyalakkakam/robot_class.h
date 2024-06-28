@@ -31,7 +31,8 @@ class Ros_Subscriber_Publisher_Class{
         void publishCovariance(visualization_msgs::Marker marker);
         void publishOdometryPath(nav_msgs::Path odometry_path);
         void publishEKFPose(geometry_msgs::PoseStamped ekf_pose);
-        void publishRansacFeatures(visualization_msgs::MarkerArray markerArray);
+        // void publishRansacFeatures(visualization_msgs::MarkerArray markerArray);
+        void publishCornerFeatures(visualization_msgs::Marker cornerMarkers);
         
 
         int pub_rate;
@@ -53,7 +54,7 @@ class Ros_Subscriber_Publisher_Class{
         ros::Publisher Odometry_path_pub;
         ros::Publisher EKF_Pose_Publisher;
         ros::Publisher Ransac_Features_Publisher;
-
+        ros::Publisher Corner_Features_Publisher;
 };
 
 #endif
