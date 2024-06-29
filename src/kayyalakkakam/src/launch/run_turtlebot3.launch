@@ -109,4 +109,6 @@
   <node name="main_node" pkg="kayyalakkakam" type="main_node" output="screen"> </node>
   <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(find kayyalakkakam)/src/map/turtlebot3_world_map.yaml" />
 
+  <node name="EvaluationAndPlotting" pkg="kayyalakkakam" type="EvaluationAndPlotting.py" output="screen"> </node>
+
 </launch>

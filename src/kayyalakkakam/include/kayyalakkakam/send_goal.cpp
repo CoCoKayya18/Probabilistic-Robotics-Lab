@@ -46,7 +46,7 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "Send_Goal Node");                                                               
     ROS_INFO_STREAM("Send_Goal Node started");
 
-    std::vector<GoalSender::Goal> goals = {{-1.5, 1.5, -M_PI/2}, {-1.5, -1.5, M_PI}, {1.5, -1.5, M_PI/2}, {1.5, 1.5, 0}};
+    std::vector<GoalSender::Goal> goals = {{-1.5, 1.5, -M_PI/2}, {-1.5, -1.5, 0}, {1.5, -1.5, M_PI/2}, {1.5, 1.5, 0}};
     GoalSender theGoaler(goals);
     theGoaler.sendGoal();
                                                                           

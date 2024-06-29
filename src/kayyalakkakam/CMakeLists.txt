@@ -9,6 +9,7 @@ project(kayyalakkakam)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rospy
   actionlib
   move_base_msgs
   geometry_msgs
@@ -114,7 +115,7 @@ catkin_package(
 #  LIBRARIES kayyalakkakam
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
-  CATKIN_DEPENDS roscpp actionlib move_base_msgs geometry_msgs tf pcl_conversions pcl_ros laser_geometry 
+  CATKIN_DEPENDS roscpp rospy actionlib move_base_msgs geometry_msgs tf pcl_conversions pcl_ros laser_geometry 
   DEPENDS OpenCV
 )
 
@@ -175,10 +176,10 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+catkin_install_python(PROGRAMS
+  src/scripts/EvaluationAndPlotting.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
