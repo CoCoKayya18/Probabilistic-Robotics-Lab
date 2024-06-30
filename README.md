@@ -30,6 +30,7 @@ roslaunch run_turtlebot3.launch
 The following is an overview of the project structure:
 
 Probabilistic-Robotics-Lab/
+.
 ├── CMakeLists.txt # CMake build script
 ├── .gitignore # Git ignore file
 ├── include/
