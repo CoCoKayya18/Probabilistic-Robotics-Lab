@@ -20,8 +20,6 @@ EKF_Localization::EKF_Localization(ros::NodeHandle &N) : NH(N), robot(NH)
     h_function_jacobi = Eigen::MatrixXd::Identity(3, 3);                            // Initial Jacobian of the h_function
     Kalman_Sensor_Sum_for_Mu = Eigen::VectorXd(3);
     Kalman_H_Matrix_Sigma_Sum_For_Sigma = Eigen::MatrixXd::Identity(3, 3); 
-    // map_Circle_Cloud.reset(new pcl::PointCloud<pcl::PointXYZ>());                          // Initialize Space for map feature point cloud
-    // detectCirclesInMap();                                                           // Extract Circle Features from Map
     map_Corner_Cloud.reset(new pcl::PointCloud<pcl::PointXYZ>());
     detectCornersInMap();
 };
