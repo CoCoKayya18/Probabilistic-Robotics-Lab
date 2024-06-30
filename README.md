@@ -53,12 +53,12 @@ Probabilistic-Robotics-Lab/
 │ ├── scripts/
 │ │ ├── plots/ # Plots generated after each run
 │ │ │ ├── convergence_plot.png
-│ │ │ └── error_histogram.png
-│ │ │ └──trajectory_comparison.png
+│ │ │ ├── error_histogram.png
+│ │ │ └── trajectory_comparison.png
 │ │ ├── harris_corner_detection.py # Harris corner detection script with trackbars
 │ │ └── EvaluationAndPlotting.py # Plot generation and EKF evaluation script
 │ └── urdf/
-│ ├── turtlebot3_burger.urdf.xacro Robot URDF file
+│ ├── turtlebot3_burger.urdf.xacro # Robot URDF file
 │ └── turtlebot3_burger.gazebo.xacro # Robot URDF file for Gazebo with ground truth plugin
 
 Each directory and file serves a specific purpose in the project:
