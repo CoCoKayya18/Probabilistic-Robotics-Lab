@@ -6,7 +6,6 @@ Ros_Subscriber_Publisher_Class::Ros_Subscriber_Publisher_Class(ros::NodeHandle &
     covariance_marker_pub = NH.advertise<visualization_msgs::Marker>("visualization_marker", 10);
     Odometry_path_pub = NH.advertise<nav_msgs::Path>("Odometry_path", 30, true);
     EKF_Pose_Publisher = NH.advertise<geometry_msgs::PoseStamped>("EKF_pose", 30, true);
-    Ransac_Features_Publisher = NH.advertise<visualization_msgs::MarkerArray>("ransac_features", 10);
     Corner_Features_Publisher = NH.advertise<visualization_msgs::Marker>("corner_features", 10);
     check_params(NH);
 }
@@ -14,26 +13,16 @@ Ros_Subscriber_Publisher_Class::Ros_Subscriber_Publisher_Class(ros::NodeHandle &
 Ros_Subscriber_Publisher_Class::~Ros_Subscriber_Publisher_Class( void ){}
 
 void Ros_Subscriber_Publisher_Class::odom_callback( const nav_msgs::Odometry::ConstPtr& msg ) {
-    // ROS_INFO_STREAM( "Got Odom Message" );
     this->myOdomMsg = *msg;
-    // ROS_INFO_STREAM(this->myOdomMsg);
  }
 
  void Ros_Subscriber_Publisher_Class::laserscan_callback( const sensor_msgs::LaserScan::ConstPtr& msg ) {
-    // ROS_INFO_STREAM( "Got LaserScan Message" );
     this->myLaserscanMsg = *msg;
-    // ROS_INFO_STREAM(this->myLaserscanMsg);
  }
 
  void Ros_Subscriber_Publisher_Class::map_callback ( const  nav_msgs::OccupancyGrid::ConstPtr& msg){
     this->myMapMsg = *msg;
  }
-
-// void Ros_Subscriber_Publisher_Class::timer_callback(const ros::TimerEvent& event){
-//     ROS_INFO_STREAM( "Timer Callback" );
-//     my_message.data = "mymessage";
-//     pub.publish( my_message );
-//  }
 
 void Ros_Subscriber_Publisher_Class::check_params(ros::NodeHandle &N){
     ROS_INFO_STREAM( "Check Rate" );
@@ -79,11 +68,6 @@ void Ros_Subscriber_Publisher_Class::publishEKFPose(geometry_msgs::PoseStamped e
 {
     EKF_Pose_Publisher.publish(ekf_pose);
 }
-
-// void Ros_Subscriber_Publisher_Class::publishRansacFeatures(visualization_msgs::MarkerArray markerArray)
-// {
-//     Ransac_Features_Publisher.publish(markerArray);
-// }
 
 void Ros_Subscriber_Publisher_Class::publishCornerFeatures(visualization_msgs::Marker cornerMarkers)
 {

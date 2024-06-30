@@ -20,8 +20,6 @@ def ground_truth_callback(msg):
     x = msg.pose.pose.position.x
     y = msg.pose.pose.position.y
     ground_truth_data.append([timestamp, x, y])
-    # Debugging information
-    rospy.loginfo(f"Ground truth: timestamp={timestamp}, x={x}, y={y}")
 
 # Callback for EKF estimate data (PoseStamped)
 def ekf_estimate_callback(msg):
@@ -30,8 +28,6 @@ def ekf_estimate_callback(msg):
     x = msg.pose.position.x
     y = msg.pose.position.y
     ekf_estimate_data.append([timestamp, x, y])
-    # Debugging information
-    rospy.loginfo(f"EKF estimate: timestamp={timestamp}, x={x}, y={y}")
 
 def compute_and_plot_metrics(save_dir=None):
     global ground_truth_data, ekf_estimate_data, landmark_coords
@@ -94,7 +90,6 @@ def compute_and_plot_metrics(save_dir=None):
         plt.title('Trajectory Comparison with Landmark')
         if save_dir:
             plt.savefig(os.path.join(save_dir, 'trajectory_comparison_with_landmark.png'))
-        # plt.show()
 
     # Plot Error Histogram
     if not data.empty:
@@ -105,7 +100,6 @@ def compute_and_plot_metrics(save_dir=None):
         plt.title('Error Histogram')
         if save_dir:
             plt.savefig(os.path.join(save_dir, 'error_histogram.png'))
-        # plt.show()
 
     # Plot Convergence (Error over time)
     if not data.empty:
@@ -116,10 +110,9 @@ def compute_and_plot_metrics(save_dir=None):
         plt.title('Convergence Plot')
         if save_dir:
             plt.savefig(os.path.join(save_dir, 'convergence_plot.png'))
-        # plt.show()
 
 def save_plots_on_shutdown():
-    save_dir = '/home/cocokayya18/Probabilistic-Robotics-Lab/src/kayyalakkakam/src/scripts/Plots'  # Replace with your desired directory
+    save_dir = '../Probabilistic-Robotics-Lab/src/kayyalakkakam/src/scripts/Plots' 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     compute_and_plot_metrics(save_dir)
@@ -133,7 +126,7 @@ def listener():
     # Register the shutdown function
     atexit.register(save_plots_on_shutdown)
 
-    rate = rospy.Rate(1)  # 1 Hz
+    rate = rospy.Rate(1) 
     while not rospy.is_shutdown():
         rate.sleep()
 

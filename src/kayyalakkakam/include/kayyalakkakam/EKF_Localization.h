@@ -1,41 +1,15 @@
 #include <vector>
 #include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
+#include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
 #include <opencv2/opencv.hpp>
 #include <tf/transform_listener.h>
 #include <cmath>
 #include <laser_geometry/laser_geometry.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/sample_consensus/ransac.h>
-#include <pcl/sample_consensus/sac_model_circle.h>
-#include <pcl/ModelCoefficients.h>
-#include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/features/integral_image_normal.h> 
-#include <pcl/features/normal_3d.h> 
-#include <pcl/features/boundary.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/segmentation/region_growing.h>
-#include <pcl/visualization/pcl_visualizer.h>
 #include "robot_class.h"
-
-struct Circle {
-    cv::Point2f center;
-    float radius;
-};
-
-struct WorldCoords {
-    double x;
-    double y;
-    double radius;
-};
 
 struct point
 {
@@ -66,13 +40,10 @@ class EKF_Localization
         void publishEKFPath();
         void publishCovariance();
         void publishOdometryPath();
-        // void publishRansacFeatures();
         void publishCornerFeatures();
         /// Visualization Functions ///
 
         /// Feature Extraction ///
-        // void detectCirclesInMap();
-        // void detectCircleInLidar(sensor_msgs::LaserScan input);
         void detectCornersInMap();
         void detectCornersInLidar(sensor_msgs::LaserScan input);
         std::vector<point> detectCorners(const std::vector<point>& points);
@@ -108,18 +79,11 @@ class EKF_Localization
         Eigen::MatrixXd Q; // Measurement Noise
         float sensor_noise = 0.01;
 
-        // std::vector<Circle> detectedCirclesInMap;
-        // std::vector<Circle> detectedCirclesInLidar;
-        // std::vector<WorldCoords> mapCircleFeatures;
         std::vector<point> cornersInLidar;
         std::vector<point> mapCornerFeatures;
-        // pcl::PointCloud<pcl::PointXYZ>::Ptr map_Circle_Cloud;
         pcl::PointCloud<pcl::PointXYZ>::Ptr map_Corner_Cloud;
         pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
         tf::TransformListener transformer;
         laser_geometry::LaserProjection projector_;
         double resolution = 0.050000;
-        WorldCoords origin = {-10.0, -10.0};
-        // const int maxRansacFeatureSize = 9;
-        // const float NewFeatureThreshold = 0.5;
 };

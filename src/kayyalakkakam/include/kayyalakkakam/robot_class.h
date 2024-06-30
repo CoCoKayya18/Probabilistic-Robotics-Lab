@@ -20,7 +20,6 @@ class Ros_Subscriber_Publisher_Class{
         void laserscan_callback( const sensor_msgs::LaserScan::ConstPtr& msg);
         void map_callback ( const  nav_msgs::OccupancyGrid::ConstPtr& msg);
 
-        // void timer_callback(const ros::TimerEvent& event);
         void check_params(ros::NodeHandle &N);
 
         nav_msgs::Odometry getOdom();
@@ -31,7 +30,6 @@ class Ros_Subscriber_Publisher_Class{
         void publishCovariance(visualization_msgs::Marker marker);
         void publishOdometryPath(nav_msgs::Path odometry_path);
         void publishEKFPose(geometry_msgs::PoseStamped ekf_pose);
-        // void publishRansacFeatures(visualization_msgs::MarkerArray markerArray);
         void publishCornerFeatures(visualization_msgs::Marker cornerMarkers);
         
 
@@ -53,7 +51,6 @@ class Ros_Subscriber_Publisher_Class{
         ros::Publisher covariance_marker_pub;
         ros::Publisher Odometry_path_pub;
         ros::Publisher EKF_Pose_Publisher;
-        ros::Publisher Ransac_Features_Publisher;
         ros::Publisher Corner_Features_Publisher;
 };
 

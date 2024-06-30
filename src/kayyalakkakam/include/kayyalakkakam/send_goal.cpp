@@ -5,7 +5,7 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 void GoalSender::sendGoal()
 {
     for(const auto& currentGoal : this->listOfGoals) {
-        //tell the action client that we want to spin a thread by default
+
         MoveBaseClient ac("move_base", true);
 
         // Convert given Yaw-Goal to Quaternions
@@ -51,7 +51,6 @@ int main(int argc, char** argv){
     theGoaler.sendGoal();
                                                                           
     ROS_INFO_STREAM("Send_Goal Node ended");                                                                        
-    // ros::Timer timer = nh.createTimer(ros::Duration(robot.pub_rate), &Ros_Subscriber_Publisher_Class::timer_callback, &robot);
     ros::spin();                                                                                        
     return 0;
 };
