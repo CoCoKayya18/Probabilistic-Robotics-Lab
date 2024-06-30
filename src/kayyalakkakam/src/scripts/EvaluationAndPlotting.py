@@ -20,8 +20,6 @@ def ground_truth_callback(msg):
     x = msg.pose.pose.position.x
     y = msg.pose.pose.position.y
     ground_truth_data.append([timestamp, x, y])
-    # Debugging information
-    rospy.loginfo(f"Ground truth: timestamp={timestamp}, x={x}, y={y}")
 
 # Callback for EKF estimate data (PoseStamped)
 def ekf_estimate_callback(msg):
@@ -30,8 +28,6 @@ def ekf_estimate_callback(msg):
     x = msg.pose.position.x
     y = msg.pose.position.y
     ekf_estimate_data.append([timestamp, x, y])
-    # Debugging information
-    rospy.loginfo(f"EKF estimate: timestamp={timestamp}, x={x}, y={y}")
 
 def compute_and_plot_metrics(save_dir=None):
     global ground_truth_data, ekf_estimate_data, landmark_coords

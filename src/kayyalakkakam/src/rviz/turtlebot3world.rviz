@@ -7,8 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /DepthCloud1/Auto Size1
-        - /CornerFeatures1
-        - /CornerFeatures1/Status1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 588
   - Class: rviz/Selection
@@ -141,12 +139,30 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_footprint:
+          Value: true
+        base_link:
+          Value: true
+        base_scan:
+          Value: true
+        caster_back_link:
+          Value: true
+        imu_link:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: true
+        wheel_left_link:
+          Value: true
+        wheel_right_link:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -154,9 +170,22 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        map:
+          odom:
+            base_footprint:
+              base_link:
+                base_scan:
+                  {}
+                caster_back_link:
+                  {}
+                imu_link:
+                  {}
+                wheel_left_link:
+                  {}
+                wheel_right_link:
+                  {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Class: rviz/Camera
       Enabled: false
       Image Rendering: background and overlay
@@ -168,8 +197,8 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
-        "": true
         Axes: true
+        CornerFeatures: true
         Covariance: true
         DepthCloud: true
         EKF_Path: true
@@ -181,7 +210,6 @@ Visualization Manager:
         Odometry: true
         Odometry_Path: true
         PoseArray: true
-        RansacFeatures: true
         RobotModel: true
         TF: true
         Value: true
@@ -262,7 +290,7 @@ Visualization Manager:
       Marker Topic: /main_node/visualization_marker
       Name: Covariance
       Namespaces:
-        EKF: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -314,13 +342,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /featureExtractor/visualization_feature_marker
       Name: Features
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 0.699999988079071
       Class: rviz/Map
       Color Scheme: map
@@ -348,14 +376,6 @@ Visualization Manager:
       Topic: /particlecloud
       Unreliable: false
       Value: false
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /main_node/ransac_features
-      Name: RansacFeatures
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -385,7 +405,7 @@ Visualization Manager:
       Marker Topic: /main_node/corner_features
       Name: CornerFeatures
       Namespaces:
-        corners: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true

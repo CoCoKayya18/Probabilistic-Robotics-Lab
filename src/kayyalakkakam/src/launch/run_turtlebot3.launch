@@ -105,7 +105,6 @@
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find kayyalakkakam)/src/rviz/turtlebot3world.rviz"/>
 
   <node name="send_goal" pkg="kayyalakkakam" type="sendGoal_node"> </node>
-  <!-- <node name="featureExtractor" pkg="kayyalakkakam" type="featureExtractor_node" output="screen"> </node> -->
   <node name="main_node" pkg="kayyalakkakam" type="main_node" output="screen"> </node>
   <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(find kayyalakkakam)/src/map/turtlebot3_world_map.yaml" />
 

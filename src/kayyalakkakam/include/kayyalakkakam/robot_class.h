@@ -8,8 +8,8 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
 #include "eigen3/Eigen/Dense"
+#include "EKF_Localization.h"
 
 class Ros_Subscriber_Publisher_Class{
     public:
@@ -27,12 +27,11 @@ class Ros_Subscriber_Publisher_Class{
         sensor_msgs::LaserScan getLaserscan();
         nav_msgs::OccupancyGrid getMap();
 
-        void publishEKFpath(nav_msgs::Path ekf_path);
-        void publishCovariance(visualization_msgs::Marker marker);
-        void publishOdometryPath(nav_msgs::Path odometry_path);
-        void publishEKFPose(geometry_msgs::PoseStamped ekf_pose);
-        // void publishRansacFeatures(visualization_msgs::MarkerArray markerArray);
-        void publishCornerFeatures(visualization_msgs::Marker cornerMarkers);
+        void publishEKFpath();
+        void publishCovariance();
+        void publishOdometryPath();
+        void publishEKFPose();
+        void publishCornerFeatures();
         
 
         int pub_rate;
@@ -48,13 +47,13 @@ class Ros_Subscriber_Publisher_Class{
         nav_msgs::OccupancyGrid myMapMsg;
         Eigen::Matrix<double, 3, 3> A;
         
-        ros::Publisher pub;
         ros::Publisher EKF_path_pub;
         ros::Publisher covariance_marker_pub;
         ros::Publisher Odometry_path_pub;
         ros::Publisher EKF_Pose_Publisher;
-        ros::Publisher Ransac_Features_Publisher;
         ros::Publisher Corner_Features_Publisher;
+
+        EKF_Localization localizer;
 };
 
 #endif
