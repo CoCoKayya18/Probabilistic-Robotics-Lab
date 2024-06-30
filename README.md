@@ -30,37 +30,38 @@ roslaunch run_turtlebot3.launch
 The following is an overview of the project structure:
 
 Probabilistic-Robotics-Lab/
-.
-├── CMakeLists.txt # CMake build script
-├── .gitignore # Git ignore file
+Probabilistic-Robotics-Lab/
+├── CMakeLists.txt                      # CMake build script
+├── .gitignore                          # Git ignore file
 ├── include/
-│ └── kayyalakkakam/
-│ ├── ekf_implementation.cpp # EKF implementation code
-│ ├── goal_sending_node.cpp # Goal sending node code
-│ ├── robot_class.cpp # Publisher and Subscriber node code
+│   └── kayyalakkakam/
+│       ├── ekf_implementation.cpp      # EKF implementation code
+│       ├── goal_sending_node.cpp       # Goal sending node code
+│       ├── robot_class.cpp             # Publisher and Subscriber node code
 ├── src/
-│ ├── code/
-│ │ └── main.cpp # Main file
-│ ├── features/
-│ │ └── features.csv # Extracted features from the map
-│ ├── launch/
-│ │ └── run_turtlebot3.launch # Launch file to start the program
-│ ├── map/
-│ │ ├── turtlebot3_world_map.pgm # Environment map
-│ │ ├── turtlebot3_world_map.yaml # Map specifications
-│ │ └── altered_mapimages/ # Processed images from feature extraction in this folder
-│ ├── rviz/
-│ │ └── config.rviz # RViz configuration file
-│ ├── scripts/
-│ │ ├── plots/ # Plots generated after each run
-│ │ │ ├── convergence_plot.png
-│ │ │ ├── error_histogram.png
-│ │ │ └── trajectory_comparison.png
-│ │ ├── harris_corner_detection.py # Harris corner detection script with trackbars
-│ │ └── EvaluationAndPlotting.py # Plot generation and EKF evaluation script
-│ └── urdf/
-│ ├── turtlebot3_burger.urdf.xacro # Robot URDF file
-│ └── turtlebot3_burger.gazebo.xacro # Robot URDF file for Gazebo with ground truth plugin
+│   ├── code/
+│   │   └── main.cpp                    # Main file
+│   ├── features/
+│   │   └── features.csv                # Extracted features from the map
+│   ├── launch/
+│   │   └── run_turtlebot3.launch       # Launch file to start the program
+│   ├── map/
+│   │   ├── turtlebot3_world_map.pgm    # Environment map
+│   │   ├── turtlebot3_world_map.yaml   # Map specifications
+│   │   └── altered_mapimages/          # Processed images from feature extraction in this folder
+│   ├── rviz/
+│   │   └── config.rviz                 # RViz configuration file
+│   ├── scripts/
+│   │   ├── plots/                      # Plots generated after each run
+│   │   │   ├── convergence_plot.png
+│   │   │   ├── error_histogram.png
+│   │   │   └── trajectory_comparison.png
+│   │   ├── harris_corner_detection.py  # Harris corner detection script with trackbars
+│   │   └── EvaluationAndPlotting.py    # Plot generation and EKF evaluation script
+│   └── urdf/
+│       ├── turtlebot3_burger.urdf.xacro  # Robot URDF file
+│       └── turtlebot3_burger.gazebo.xacro # Robot URDF file for Gazebo with ground truth plugin
+
 
 Each directory and file serves a specific purpose in the project:
 
